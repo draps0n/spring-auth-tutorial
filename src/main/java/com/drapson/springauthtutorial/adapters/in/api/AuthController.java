@@ -6,6 +6,7 @@ import com.drapson.springauthtutorial.adapters.in.api.request.LoginUserRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.RegisterUserRequest;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
+import com.drapson.springauthtutorial.domain.User;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthTokens> registerUser(@RequestBody @Valid RegisterUserRequest request) {
-        AuthTokens authTokens = authService.registerUser(
+        User user = authService.registerUser(
                 new RegisterUserDto(
                         request.email(),
                         request.password(),
@@ -41,6 +42,9 @@ public class AuthController {
                         request.isProfilePublic()
                 )
         );
+
+        AuthTokens authTokens = authService.issueJwtTokens(user);
+
         return ResponseEntity.ok(authTokens);
     }
 

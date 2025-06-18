@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthTokens registerUser(RegisterUserDto registerUserDto) {
+    public User registerUser(RegisterUserDto registerUserDto) {
         if (userRepository.getUserByEmailWithoutPassword(registerUserDto.email()).isPresent()) {
             throw new EmailLinkedThroughProviderException("User with this email is linked through a provider");
         }
@@ -51,8 +51,7 @@ public class AuthServiceImpl implements AuthService {
                 registerUserDto.isProfilePublic()
         );
 
-        User createdUser = userRepository.save(user);
-        return generateNewAuthTokens(createdUser);
+        return userRepository.save(user);
     }
 
     @Override
@@ -128,8 +127,9 @@ public class AuthServiceImpl implements AuthService {
         if (pendingOAuthRegistration == null) {
             throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + token);
         }
+        tempUserDataPort.delete(token);
 
-        return registerUser(
+        User user = registerUser(
                 new RegisterUserDto(
                         pendingOAuthRegistration.email(),
                         null,
@@ -141,6 +141,15 @@ public class AuthServiceImpl implements AuthService {
                         finishOAuthRegistrationDto.isProfilePublic()
                 )
         );
+
+        userProviderRepository.save(new UserOAuthProvider(
+                UUID.randomUUID(),
+                pendingOAuthRegistration.provider(),
+                pendingOAuthRegistration.providerId(),
+                user
+        ));
+
+        return generateNewAuthTokens(user);
     }
 
     @Transactional
