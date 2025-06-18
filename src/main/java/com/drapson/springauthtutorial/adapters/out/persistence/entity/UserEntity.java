@@ -24,6 +24,9 @@ public class UserEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<RefreshTokenEntity> refreshTokens = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private Set<UserOAuthProviderEntity> userOAuthProviders = new HashSet<>();
+
     public UserEntity() {
     }
 
@@ -72,5 +75,13 @@ public class UserEntity {
 
     public void setRefreshTokens(Set<RefreshTokenEntity> refreshTokens) {
         this.refreshTokens = refreshTokens;
+    }
+
+    public Set<UserOAuthProviderEntity> getUserOAuthProviders() {
+        return userOAuthProviders;
+    }
+
+    public void setUserOAuthProviders(Set<UserOAuthProviderEntity> userOAuthProviders) {
+        this.userOAuthProviders = userOAuthProviders;
     }
 }
