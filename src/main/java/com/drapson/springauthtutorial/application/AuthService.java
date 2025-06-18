@@ -4,7 +4,7 @@ import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
 
 public interface AuthService {
-    AuthTokens registerUser(RegisterUserDto registerUserDto);
+    User registerUser(RegisterUserDto registerUserDto);
 
     AuthTokens loginUser(LoginUserDto loginUserDto);
 
