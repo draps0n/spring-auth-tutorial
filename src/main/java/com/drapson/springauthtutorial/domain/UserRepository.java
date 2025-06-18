@@ -12,4 +12,6 @@ public interface UserRepository {
     List<User> getAllUsers();
 
     Optional<User> findByEmail(String email);
+
+    Optional<User> getUserByEmailWithoutPassword(String email);
 }
