@@ -18,10 +18,11 @@ public class ServiceConfiguration {
     public AuthService authService(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
+            UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
-            TokenProvider tokenProvider
-    ) {
-        return new AuthServiceImpl(userRepository, refreshTokenRepository, passwordEncoder, tokenProvider);
+            TokenProvider tokenProvider,
+            TempUserDataPort tempUserDataPort) {
+        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort);
     }
 
 }

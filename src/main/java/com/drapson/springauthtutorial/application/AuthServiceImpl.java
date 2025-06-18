@@ -14,18 +14,23 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserProviderRepository userProviderRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
+    private final TempUserDataPort tempUserDataPort;
 
-    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider) {
+    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.userProviderRepository = userProviderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.tempUserDataPort = tempUserDataPort;
     }
 
     @Override
-    public CreatedUser registerUser(RegisterUserDto registerUserDto) {
+    @Transactional
+    public AuthTokens registerUser(RegisterUserDto registerUserDto) {
         if (userRepository.getUserByEmailWithoutPassword(registerUserDto.email()).isPresent()) {
             throw new EmailLinkedThroughProviderException("User with this email is linked through a provider");
         }
@@ -37,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
         User user = new User(
                 UUID.randomUUID(),
                 registerUserDto.email(),
-                passwordEncoder.encode(registerUserDto.password()),
+                registerUserDto.password() == null ? null : passwordEncoder.encode(registerUserDto.password()),
                 registerUserDto.username(),
                 registerUserDto.firstName(),
                 registerUserDto.lastName(),
@@ -47,11 +52,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         User createdUser = userRepository.save(user);
-        return new CreatedUser(
-                createdUser.getId(),
-                createdUser.getEmail(),
-                createdUser.getUsername()
-        );
+        return generateNewAuthTokens(createdUser);
     }
 
     @Override
@@ -112,7 +113,34 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean checkIfUserHasProvider(User user, String provider) {
-        return false;
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        return userProviderRepository.checkIfUserHasProvider(user.getId(), provider);
+    }
+
+    @Override
+    @Transactional
+    public AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto) {
+        String token = finishOAuthRegistrationDto.token();
+        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(token);
+        if (pendingOAuthRegistration == null) {
+            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + token);
+        }
+
+        return registerUser(
+                new RegisterUserDto(
+                        pendingOAuthRegistration.email(),
+                        null,
+                        finishOAuthRegistrationDto.username(),
+                        pendingOAuthRegistration.firstName(),
+                        pendingOAuthRegistration.lastName(),
+                        finishOAuthRegistrationDto.birthDate(),
+                        finishOAuthRegistrationDto.sendBudgetReports(),
+                        finishOAuthRegistrationDto.isProfilePublic()
+                )
+        );
     }
 
     @Transactional

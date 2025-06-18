@@ -1,13 +1,10 @@
 package com.drapson.springauthtutorial.application;
 
-import com.drapson.springauthtutorial.application.dtos.AuthTokens;
-import com.drapson.springauthtutorial.application.dtos.CreatedUser;
-import com.drapson.springauthtutorial.application.dtos.LoginUserDto;
-import com.drapson.springauthtutorial.application.dtos.RegisterUserDto;
+import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
 
 public interface AuthService {
-    CreatedUser registerUser(RegisterUserDto registerUserDto);
+    AuthTokens registerUser(RegisterUserDto registerUserDto);
 
     AuthTokens loginUser(LoginUserDto loginUserDto);
 
@@ -18,4 +15,6 @@ public interface AuthService {
     AuthTokens issueJwtTokens(User user);
 
     boolean checkIfUserHasProvider(User user, String provider);
+
+    AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto);
 }

@@ -1,8 +1,8 @@
-package com.drapson.springauthtutorial.adapters.in.api.request;
+package com.drapson.springauthtutorial.application.dtos;
 
 import java.time.LocalDate;
 
-public record AdditionalRegistrationInfoRequest(
+public record FinishOAuthRegistrationDto(
         String token,
         String username,
         LocalDate birthDate,
