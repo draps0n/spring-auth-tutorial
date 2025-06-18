@@ -26,11 +26,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public CreatedUser registerUser(RegisterUserDto registerUserDto) {
+        if (userRepository.getUserByEmailWithoutPassword(registerUserDto.email()).isPresent()) {
+            throw new EmailLinkedThroughProviderException("User with this email is linked through a provider");
+        }
+
+        if (userRepository.getUserByEmail(registerUserDto.email()).isPresent()) {
+            throw new UserAlreadyExistsException("User with this email already exists");
+        }
+
         User user = new User(
                 UUID.randomUUID(),
                 registerUserDto.email(),
                 passwordEncoder.encode(registerUserDto.password()),
-                registerUserDto.username()
+                registerUserDto.username(),
+                registerUserDto.firstName(),
+                registerUserDto.lastName(),
+                registerUserDto.birthDate(),
+                registerUserDto.sendBudgetReports(),
+                registerUserDto.isProfilePublic()
         );
 
         User createdUser = userRepository.save(user);
