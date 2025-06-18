@@ -1,11 +1,19 @@
 package com.drapson.springauthtutorial.config;
 
+import com.drapson.springauthtutorial.adapters.in.security.CustomOAuth2SuccessHandler;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationFilter;
 import com.drapson.springauthtutorial.adapters.in.security.UserDetailsServiceImpl;
+import com.drapson.springauthtutorial.adapters.out.redis.RedisTempUserDataAdapter;
+import com.drapson.springauthtutorial.application.AuthService;
+import com.drapson.springauthtutorial.application.TempUserDataPort;
 import com.drapson.springauthtutorial.application.TokenProvider;
+import com.drapson.springauthtutorial.application.UserService;
 import com.drapson.springauthtutorial.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,7 +30,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, CustomOAuth2SuccessHandler customOAuth2SuccessHandler) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -36,7 +44,18 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .httpBasic(Customizer.withDefaults())
+                .oauth2Login(oauth2 -> oauth2.successHandler(customOAuth2SuccessHandler))
                 .build();
+    }
+
+    @Bean
+    public TempUserDataPort tempUserDataPort(RedisTemplate<String, Object> redisTemplate) {
+        return new RedisTempUserDataAdapter(redisTemplate);
+    }
+
+    @Bean
+    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, TempUserDataPort tempUserDataPort, @Value("${app.front-url}") String frontUrl) {
+        return new CustomOAuth2SuccessHandler(userService, authService, tempUserDataPort, frontUrl);
     }
 
     @Bean
@@ -65,6 +84,13 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        return template;
     }
 
 }
