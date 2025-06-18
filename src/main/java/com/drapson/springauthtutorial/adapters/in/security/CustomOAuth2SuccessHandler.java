@@ -55,12 +55,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         );
         if (user == null) {
             String tempRegistrationToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofMinutes(10));
+            tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofMinutes(10)); // TODO: make it configurable
             response.sendRedirect(frontUrl + "/register-oauth?token=" + tempRegistrationToken);
             System.out.println("User not found, redirecting to registration page: " + email);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
             String linkToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(linkToken, pendingOAuthRegistration, Duration.ofMinutes(5));
+            tempUserDataPort.save(linkToken, pendingOAuthRegistration, Duration.ofMinutes(5)); // TODO: make it configurable
             response.sendRedirect(frontUrl + "/link-account?token=" + linkToken);
             System.out.println("User found but provider not linked, redirecting to link account page: " + email);
         } else {
