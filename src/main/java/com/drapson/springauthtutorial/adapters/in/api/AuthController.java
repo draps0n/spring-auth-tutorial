@@ -80,10 +80,17 @@ public class AuthController {
     }
 
 
-    @PostMapping("/link-oauth")
-    public ResponseEntity<String> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest linkAccountsRequest) {
-//        authService.linkAccounts(request.linkToken(), request.shouldLinkAccounts());
-        return ResponseEntity.ok("OAuth accounts linked successfully");
-    }
+    /*@PostMapping("/link-oauth")
+    public ResponseEntity<AuthTokens> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest linkAccountsRequest) {
+        AuthTokens authTokens = authService.linkAccounts(new LinkAccountsDto(
+                linkAccountsRequest.linkToken(),
+                linkAccountsRequest.shouldLinkAccounts(),
+                linkAccountsRequest.username(),
+                linkAccountsRequest.birthDate(),
+                linkAccountsRequest.sendBudgetReports(),
+                linkAccountsRequest.isProfilePublic()
+        ));
+        return ResponseEntity.ok(authTokens);
+    }*/
 
 }

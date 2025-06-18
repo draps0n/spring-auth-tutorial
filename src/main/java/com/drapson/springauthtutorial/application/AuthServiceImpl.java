@@ -152,6 +152,13 @@ public class AuthServiceImpl implements AuthService {
         return generateNewAuthTokens(user);
     }
 
+    /*@Override
+    public AuthTokens linkAccounts(LinkAccountsDto linkAccountsDto) {
+        if (linkAccountsDto.shouldLinkAccounts()) {
+
+        }
+    }*/
+
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {
         return generateNewAuthTokens(user, null);
