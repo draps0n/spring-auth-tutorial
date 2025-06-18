@@ -1,5 +1,6 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
+import com.drapson.springauthtutorial.adapters.in.api.request.LinkAccountsRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.LoginUserRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.RegisterUserRequest;
 import com.drapson.springauthtutorial.application.AuthService;
@@ -34,7 +35,12 @@ public class AuthController {
                 new RegisterUserDto(
                         request.email(),
                         request.password(),
-                        request.username()
+                        request.username(),
+                        request.firstName(),
+                        request.lastName(),
+                        request.birthDate(),
+                        request.sendBudgetReports(),
+                        request.isProfilePublic()
                 )
         );
         return ResponseEntity
@@ -58,6 +64,19 @@ public class AuthController {
         String refreshToken = authorizationHeader.replace("Bearer ", "");
         AuthTokens authTokens = authService.refreshTokens(refreshToken);
         return ResponseEntity.ok(authTokens);
+    }
+
+    @PostMapping("/finish-oauth-registration")
+    public ResponseEntity<String> finishOAuthRegistration(@RequestParam("token") String token) {
+//        authService.finishOAuthRegistration(token);
+        return ResponseEntity.ok("OAuth registration completed successfully");
+    }
+
+
+    @PostMapping("/link-oauth")
+    public ResponseEntity<String> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest request) {
+//        authService.linkAccounts(request.linkToken(), request.shouldLinkAccounts());
+        return ResponseEntity.ok("OAuth accounts linked successfully");
     }
 
 }
