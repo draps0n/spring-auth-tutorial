@@ -1,13 +1,11 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
+import com.drapson.springauthtutorial.adapters.in.api.request.AdditionalRegistrationInfoRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.LinkAccountsRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.LoginUserRequest;
 import com.drapson.springauthtutorial.adapters.in.api.request.RegisterUserRequest;
 import com.drapson.springauthtutorial.application.AuthService;
-import com.drapson.springauthtutorial.application.dtos.AuthTokens;
-import com.drapson.springauthtutorial.application.dtos.CreatedUser;
-import com.drapson.springauthtutorial.application.dtos.LoginUserDto;
-import com.drapson.springauthtutorial.application.dtos.RegisterUserDto;
+import com.drapson.springauthtutorial.application.dtos.*;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +28,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody @Valid RegisterUserRequest request) {
-        CreatedUser createdUser = authService.registerUser(
+    public ResponseEntity<AuthTokens> registerUser(@RequestBody @Valid RegisterUserRequest request) {
+        AuthTokens authTokens = authService.registerUser(
                 new RegisterUserDto(
                         request.email(),
                         request.password(),
@@ -43,9 +41,7 @@ public class AuthController {
                         request.isProfilePublic()
                 )
         );
-        return ResponseEntity
-                .created(URI.create("/api/v1/users/" + createdUser.id()))
-                .body("User registered successfully");
+        return ResponseEntity.ok(authTokens);
     }
 
     @PostMapping("/login")
@@ -67,14 +63,21 @@ public class AuthController {
     }
 
     @PostMapping("/finish-oauth-registration")
-    public ResponseEntity<String> finishOAuthRegistration(@RequestParam("token") String token) {
-//        authService.finishOAuthRegistration(token);
-        return ResponseEntity.ok("OAuth registration completed successfully");
+    public ResponseEntity<AuthTokens> finishOAuthRegistration(@RequestBody @Valid AdditionalRegistrationInfoRequest additionalRegistrationInfoRequest) {
+        AuthTokens authTokens = authService.finishOAuthRegistration(new FinishOAuthRegistrationDto(
+                additionalRegistrationInfoRequest.token(),
+                additionalRegistrationInfoRequest.username(),
+                additionalRegistrationInfoRequest.birthDate(),
+                additionalRegistrationInfoRequest.sendBudgetReports(),
+                additionalRegistrationInfoRequest.isProfilePublic()
+        ));
+
+        return ResponseEntity.ok(authTokens);
     }
 
 
     @PostMapping("/link-oauth")
-    public ResponseEntity<String> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest request) {
+    public ResponseEntity<String> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest linkAccountsRequest) {
 //        authService.linkAccounts(request.linkToken(), request.shouldLinkAccounts());
         return ResponseEntity.ok("OAuth accounts linked successfully");
     }
