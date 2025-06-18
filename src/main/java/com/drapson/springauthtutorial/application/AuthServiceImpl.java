@@ -42,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public AuthTokens loginUser(LoginUserDto loginUserDto) {
         User user = userRepository
                 .getUserByEmail(loginUserDto.email())
@@ -49,24 +50,20 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(loginUserDto.password(), user.getPassword())) {
             throw new InvalidPasswordException("Provided password is invalid");
         }
-        AuthTokens authTokens = generateNewAuthTokens(user);
-        String hashedRefreshToken = tokenProvider.hashToken(authTokens.refreshToken());
-        RefreshToken refreshToken = new RefreshToken(
-                UUID.randomUUID(),
-                hashedRefreshToken,
-                user,
-                LocalDateTime.now(),
-                LocalDateTime.now().plusDays(30), // TODO: Make this configurable
-                false
-        );
-        refreshTokenRepository.save(refreshToken);
 
-        return authTokens;
+        return generateNewAuthTokens(user);
     }
 
     @Override
     public void logoutUser(String token) {
+        String hashedToken = tokenProvider.hashToken(token);
+        RefreshToken refreshToken = refreshTokenRepository
+                .getRefreshTokenByHashedToken(hashedToken)
+                .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token not found"));
 
+        if (!refreshToken.expiresAt().isBefore(LocalDateTime.now()) && !refreshToken.revoked()) {
+            refreshTokenRepository.updateRevokedStatus(refreshToken.id(), true);
+        }
     }
 
     @Override
@@ -86,27 +83,51 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = existingRefreshToken.user();
-        AuthTokens authTokens = generateNewAuthTokens(user);
-        String newHashedRefreshToken = tokenProvider.hashToken(authTokens.refreshToken());
-        RefreshToken newRefreshToken = new RefreshToken(
+
+        return generateNewAuthTokens(user, existingRefreshToken.id());
+    }
+
+    @Override
+    @Transactional
+    public AuthTokens issueJwtTokens(User user) {
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        return generateNewAuthTokens(user);
+    }
+
+    @Override
+    public boolean checkIfUserHasProvider(User user, String provider) {
+        return false;
+    }
+
+    @Transactional
+    protected AuthTokens generateNewAuthTokens(User user) {
+        return generateNewAuthTokens(user, null);
+    }
+
+    @Transactional
+    protected AuthTokens generateNewAuthTokens(User user, UUID toRevokeRefreshTokenId) {
+        String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
+        String rawRefreshToken = tokenProvider.generateRefreshToken();
+        String hashedRefreshToken = tokenProvider.hashToken(rawRefreshToken);
+        RefreshToken refreshToken = new RefreshToken(
                 UUID.randomUUID(),
-                newHashedRefreshToken,
+                hashedRefreshToken,
                 user,
                 LocalDateTime.now(),
                 LocalDateTime.now().plusDays(30), // TODO: Make this configurable
                 false
         );
 
-        refreshTokenRepository.updateRevokedStatus(existingRefreshToken.id(), true);
-        refreshTokenRepository.save(newRefreshToken);
+        if (toRevokeRefreshTokenId != null) {
+            refreshTokenRepository.updateRevokedStatus(toRevokeRefreshTokenId, true);
+        }
 
-        return authTokens;
-    }
+        refreshTokenRepository.save(refreshToken);
 
-    private AuthTokens generateNewAuthTokens(User user) {
-        String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
-        String refreshToken = tokenProvider.generateRefreshToken();
-        return new AuthTokens(accessToken, refreshToken);
+        return new AuthTokens(accessToken, rawRefreshToken);
     }
 }
 
