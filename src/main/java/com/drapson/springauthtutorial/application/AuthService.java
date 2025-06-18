@@ -17,4 +17,6 @@ public interface AuthService {
     boolean checkIfUserHasProvider(User user, String provider);
 
     AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto);
+
+//    AuthTokens linkAccounts(LinkAccountsDto linkAccountsDto);
 }
