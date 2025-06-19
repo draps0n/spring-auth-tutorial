@@ -206,4 +206,4 @@ gradle-app.setting
 # Eclipse Gradle plugin generated files
 # Eclipse Core
 # JDT-specific (Eclipse Java Development Tools)
-
+.env
