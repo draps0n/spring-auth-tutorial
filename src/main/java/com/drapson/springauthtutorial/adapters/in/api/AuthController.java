@@ -17,12 +17,7 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-
-    @GetMapping
-    public ResponseEntity<String> testEndpoint() {
-        return ResponseEntity.ok("Use POST on /register to register a user");
-    }
-
+    
     @PostMapping("/register")
     public ResponseEntity<AuthTokens> registerUser(@RequestBody @Valid RegisterUserRequest request) {
         User user = authService.registerUser(
