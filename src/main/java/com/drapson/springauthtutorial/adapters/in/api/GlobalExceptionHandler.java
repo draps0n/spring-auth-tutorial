@@ -17,7 +17,7 @@ import java.time.format.DateTimeParseException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler({MethodArgumentNotValidException.class, DateTimeParseException.class})
-    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+    public ProblemDetail handleValidation(Exception ex) {
         ErrorCode error = ErrorCode.VALIDATION_ERROR;
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle(error.getDefaultMessage());
@@ -114,7 +114,7 @@ public class GlobalExceptionHandler {
         ErrorCode error = ErrorCode.REFRESH_TOKEN_UNKNOWN;
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle(error.getDefaultMessage());
-        problem.setType(URI.create("https://inz-api.com/errors/refresh-token-not-found"));
+        problem.setType(URI.create("https://inz-api.com/errors/refresh-token-unknown"));
         problem.setProperty("errorCode", error.getCode());
         return problem;
     }
