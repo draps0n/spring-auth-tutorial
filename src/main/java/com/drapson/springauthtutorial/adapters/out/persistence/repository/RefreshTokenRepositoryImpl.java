@@ -4,7 +4,6 @@ import com.drapson.springauthtutorial.adapters.out.persistence.entity.RefreshTok
 import com.drapson.springauthtutorial.adapters.out.persistence.mapper.RefreshTokenMapper;
 import com.drapson.springauthtutorial.application.RefreshTokenRepository;
 import com.drapson.springauthtutorial.application.dtos.RefreshToken;
-import com.drapson.springauthtutorial.application.exceptions.RefreshTokenNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
