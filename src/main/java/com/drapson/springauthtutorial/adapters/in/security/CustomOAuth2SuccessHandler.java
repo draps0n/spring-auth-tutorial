@@ -14,6 +14,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.UUID;
 
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
@@ -28,7 +30,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         String provider = oauthToken.getAuthorizedClientRegistrationId();
@@ -51,18 +53,18 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     private void issueTokens(HttpServletResponse response, User user, String email, String provider, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
         if (user == null) {
+            // User not found, more registration details needed
             String tempRegistrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-            response.sendRedirect(frontUrl + "/register-oauth?token=" + tempRegistrationToken); // TODO: throw exception
-            System.out.println("User not found, redirecting to registration page: " + email);
+            throw new AdditionalRegistrationInfoNeededException("To register, please provide additional information.", tempRegistrationToken);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
+            // User found but provider is not linked, possible account linking needed
             String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-            response.sendRedirect(frontUrl + "/link-account?token=" + linkToken); // TODO: throw exception
-            System.out.println("User found but provider not linked, redirecting to link account page: " + email);
+            throw new EmailLinkedToAnotherAccountWithDifferentProviderException("Account linking needed.", linkToken);
         } else {
+            // User found and provider is linked, issue JWT tokens
             AuthTokens authTokens = authService.issueJwtTokens(user);
             response.setContentType("application/json");
-            System.out.println("User logged in successfully: " + user.getEmail());
-            // cookies
+            // TODO: issue cookies
         }
     }
 

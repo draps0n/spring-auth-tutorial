@@ -71,10 +71,10 @@ public class AuthServiceImpl implements AuthService {
     public AuthTokens loginUser(LoginUserDto loginUserDto) {
         User user = userRepository
                 .getUserByEmailWithPassword(loginUserDto.email())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new InvalidCredentialsException("Login credentials are invalid"));
 
         if (!passwordEncoder.matches(loginUserDto.password(), user.getPassword())) {
-            throw new InvalidPasswordException("Provided password is invalid");
+            throw new InvalidCredentialsException("Login credentials are invalid");
         }
 
         return generateNewAuthTokens(user);
@@ -85,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
         String hashedToken = tokenProvider.hashToken(token);
         RefreshToken refreshToken = refreshTokenRepository
                 .getRefreshTokenByHashedToken(hashedToken)
-                .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token not found"));
+                .orElseThrow(() -> new RefreshTokenUnknownException("Refresh token not found"));
 
         if (!refreshToken.expiresAt().isBefore(LocalDateTime.now()) && !refreshToken.revoked()) {
             refreshTokenRepository.updateRevokedStatus(refreshToken.id(), true);
@@ -98,7 +98,7 @@ public class AuthServiceImpl implements AuthService {
         String hashedRefreshToken = tokenProvider.hashToken(refreshToken);
         RefreshToken existingRefreshToken = refreshTokenRepository
                 .getRefreshTokenByHashedToken(hashedRefreshToken)
-                .orElseThrow(() -> new RefreshTokenNotFoundException("Refresh token not found"));
+                .orElseThrow(() -> new RefreshTokenUnknownException("Refresh token not found"));
 
         if (existingRefreshToken.revoked()) {
             throw new RefreshTokenRevokedException("Refresh token has been revoked");
@@ -136,9 +136,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto) {
         String token = finishOAuthRegistrationDto.token();
-        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(token);
+        PendingOAuthRegistration pendingOAuthRegistration;
+        try {
+            pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(token);
+        } catch (ClassCastException e) {
+            throw new InvalidRegistrationTokenException("Invalid registration token type");
+        }
+
         if (pendingOAuthRegistration == null) {
-            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + token);
+            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for given token");
         }
         tempUserDataPort.delete(token);
 
@@ -168,15 +174,21 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
-        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkOAuthAccountDto.linkToken());
+        PendingOAuthRegistration pendingOAuthRegistration;
+        try {
+            pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkOAuthAccountDto.linkToken());
+        } catch (ClassCastException e) {
+            throw new InvalidLinkTokenException("Invalid link token type");
+        }
+
         if (pendingOAuthRegistration == null) {
-            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + linkOAuthAccountDto.linkToken());
+            throw new InvalidLinkTokenException("Pending OAuth registration not found for token");
         }
         tempUserDataPort.delete(linkOAuthAccountDto.linkToken());
 
         if (linkOAuthAccountDto.shouldLinkAccounts()) {
             User user = userRepository.getUserByEmailWithPassword(pendingOAuthRegistration.email())
-                    .orElseThrow(() -> new UserNotFoundException("User not found or already has a password"));
+                    .orElseThrow(() -> new LinkedUserNotFoundException("Local user to link to not found"));
 
             if (userProviderRepository.checkIfUserHasProvider(user.getId(), pendingOAuthRegistration.provider())) {
                 throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
@@ -198,9 +210,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto) {
-        PendingLocalRegistration pendingLocalRegistration = (PendingLocalRegistration) tempUserDataPort.get(linkLocalAccountDto.linkToken());
+        PendingLocalRegistration pendingLocalRegistration;
+        try {
+            pendingLocalRegistration = (PendingLocalRegistration) tempUserDataPort.get(linkLocalAccountDto.linkToken());
+        } catch (ClassCastException e) {
+            throw new InvalidLinkTokenException("Invalid link token type");
+        }
+
         if (pendingLocalRegistration == null) {
-            throw new InvalidRegistrationTokenException("Pending local account registration not found for token: " + linkLocalAccountDto.linkToken());
+            throw new InvalidLinkTokenException("Pending local account registration not found for given token");
         }
         tempUserDataPort.delete(linkLocalAccountDto.linkToken());
 
@@ -209,7 +227,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (userRepository.getUserByEmailWithPassword(pendingLocalRegistration.email()).isPresent()) {
-            throw new UserAlreadyExistsException("User with this email already has local account");
+            throw new UserAlreadyExistsException("User with this email already has a local account");
         }
 
         User user = userRepository.getUserByEmailWithoutPassword(pendingLocalRegistration.email())
