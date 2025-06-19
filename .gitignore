@@ -212,3 +212,15 @@ gradle-app.setting
 src/main/resources/application-prod.yml
 src/main/resources/application-dev.yml
 src/main/resources/application.yml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+._*
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.apdisk
