@@ -24,19 +24,19 @@ import java.util.UUID;
 public class JwtTokenProvider implements TokenProvider {
 
     private final SecretKey secretKey;
-    private final long expirationTime;
+    private final long accessTokenExpirationTime;
     private final UserDetailsService userDetailsService;
 
     public JwtTokenProvider(
-            @Value("${spring.jwt.secret}") String secret,
-            @Value("${spring.jwt.access_expiration}") long expirationTime,
+            @Value("${spring.tokens.jwt.secret}") String secretKey,
+            @Value("${spring.tokens.jwt.access_expiration}") long accessTokenExpirationTime,
             UserDetailsService userDetailsService
     ) {
         this.secretKey = new SecretKeySpec(
-                secret.getBytes(StandardCharsets.UTF_8),
+                secretKey.getBytes(StandardCharsets.UTF_8),
                 "HmacSHA256"
         );
-        this.expirationTime = expirationTime;
+        this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.userDetailsService = userDetailsService;
     }
 
@@ -46,7 +46,7 @@ public class JwtTokenProvider implements TokenProvider {
                 .subject(email)
                 .claim("userId", userId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .expiration(new Date(System.currentTimeMillis() + (accessTokenExpirationTime * 1000L)))
                 .signWith(secretKey)
                 .compact();
     }

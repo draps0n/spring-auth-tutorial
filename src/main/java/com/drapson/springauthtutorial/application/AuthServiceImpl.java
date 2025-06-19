@@ -4,6 +4,7 @@ import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.*;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,9 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
+
+    @Value("${spring.tokens.other.temp_access_expiration}") private long tempTokenExpirationTime;
+    @Value("${spring.tokens.other.refresh_expiration}") private long refTokenExpirationTime;
 
     public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
         this.userRepository = userRepository;
@@ -38,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
                     passwordEncoder.encode(registerUserDto.password())
             );
             String linkToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(linkToken, pendingLocalRegistration, Duration.ofMinutes(10)); // TODO: Make this configurable
+            tempUserDataPort.save(linkToken, pendingLocalRegistration,Duration.ofSeconds(tempTokenExpirationTime));
 
             throw new EmailLinkedThroughProviderException("User with this email is linked through a provider", linkToken);
         }
@@ -235,6 +239,13 @@ public class AuthServiceImpl implements AuthService {
         return generateNewAuthTokens(user);
     }
 
+    @Override
+    public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
+        String tempRegistrationToken = UUID.randomUUID().toString();
+        tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
+        return tempRegistrationToken;
+    }
+
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {
         return generateNewAuthTokens(user, null);
@@ -250,7 +261,7 @@ public class AuthServiceImpl implements AuthService {
                 hashedRefreshToken,
                 user,
                 LocalDateTime.now(),
-                LocalDateTime.now().plusDays(30), // TODO: Make this configurable
+                LocalDateTime.now().plusSeconds(refTokenExpirationTime),
                 false
         );
 
