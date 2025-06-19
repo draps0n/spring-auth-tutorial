@@ -1,7 +1,11 @@
 package com.drapson.springauthtutorial.adapters.out.jwt;
 
 import com.drapson.springauthtutorial.application.TokenProvider;
+import com.drapson.springauthtutorial.application.exceptions.AccessTokenExpiredException;
+import com.drapson.springauthtutorial.application.exceptions.EmptyAccessTokenException;
+import com.drapson.springauthtutorial.application.exceptions.InvalidAccessTokenException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.UnsupportedJwtException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -54,22 +58,16 @@ public class JwtTokenProvider implements TokenProvider {
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token);
-            System.out.println("JWT is valid");
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | io.jsonwebtoken.MalformedJwtException e) {
-            System.out.println("Invalid JWT signature or token");
-            // nieprawidłowy podpis lub token
+            throw new InvalidAccessTokenException("Invalid token");
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            System.out.println("Token has expired");
-            // token wygasł
+            throw new AccessTokenExpiredException("Token has expired");
         } catch (io.jsonwebtoken.UnsupportedJwtException e) {
-            System.out.println("Unsupported token");
-            // nieobsługiwany token
+            throw new UnsupportedJwtException("Provided token format is not supported");
         } catch (IllegalArgumentException e) {
-            System.out.println("Token is empty or null");
-            // pusty token
+            throw new EmptyAccessTokenException("Access token is empty");
         }
-        return false;
     }
 
     @Override
