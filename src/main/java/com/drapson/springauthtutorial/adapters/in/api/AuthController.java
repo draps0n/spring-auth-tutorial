@@ -1,9 +1,6 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
-import com.drapson.springauthtutorial.adapters.in.api.request.AdditionalRegistrationInfoRequest;
-import com.drapson.springauthtutorial.adapters.in.api.request.LinkAccountsRequest;
-import com.drapson.springauthtutorial.adapters.in.api.request.LoginUserRequest;
-import com.drapson.springauthtutorial.adapters.in.api.request.RegisterUserRequest;
+import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
@@ -79,10 +76,19 @@ public class AuthController {
 
 
     @PostMapping("/link-oauth")
-    public ResponseEntity<AuthTokens> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest linkAccountsRequest) {
-        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkAccountsDto(
-                linkAccountsRequest.linkToken(),
-                linkAccountsRequest.shouldLinkAccounts()
+    public ResponseEntity<AuthTokens> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest) {
+        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
+                linkOAuthAccountRequest.linkToken(),
+                linkOAuthAccountRequest.shouldLinkAccounts()
+        ));
+        return authTokens == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(authTokens);
+    }
+
+    @PostMapping("/link-local")
+    public ResponseEntity<AuthTokens> linkLocalAccount(@RequestBody @Valid LinkLocalAccountRequest linkLocalAccountRequest) {
+        AuthTokens authTokens = authService.linkNewLocalAccount(new LinkLocalAccountDto(
+                linkLocalAccountRequest.linkToken(),
+                linkLocalAccountRequest.shouldLinkAccounts()
         ));
         return authTokens == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(authTokens);
     }

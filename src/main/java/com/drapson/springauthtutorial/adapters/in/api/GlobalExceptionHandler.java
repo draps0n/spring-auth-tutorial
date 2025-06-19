@@ -1,5 +1,6 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
+import com.drapson.springauthtutorial.application.exceptions.EmailLinkedThroughProviderException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +21,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Brak dostępu");
+    }
+
+    @ExceptionHandler(EmailLinkedThroughProviderException.class)
+    public ResponseEntity<String> handleEmailLinked(EmailLinkedThroughProviderException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Adres e-mail jest już powiązany z kontem przez inny dostawcę. Token łączenia: " + ex.getLinkToken());
     }
 
     @ExceptionHandler(Exception.class)

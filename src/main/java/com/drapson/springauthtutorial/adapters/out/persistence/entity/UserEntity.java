@@ -37,10 +37,10 @@ public class UserEntity {
     @Column(name = "is_profile_public", nullable = false)
     private boolean isProfilePublic;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<RefreshTokenEntity> refreshTokens = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserOAuthProviderEntity> userOAuthProviders = new HashSet<>();
 
     public UserEntity() {

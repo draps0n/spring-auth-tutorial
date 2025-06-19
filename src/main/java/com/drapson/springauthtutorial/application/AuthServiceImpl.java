@@ -7,6 +7,7 @@ import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,7 +33,14 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public User registerUser(RegisterUserDto registerUserDto) {
         if (userRepository.getUserByEmailWithoutPassword(registerUserDto.email()).isPresent()) {
-            throw new EmailLinkedThroughProviderException("User with this email is linked through a provider");
+            PendingLocalRegistration pendingLocalRegistration = new PendingLocalRegistration(
+                    registerUserDto.email(),
+                    passwordEncoder.encode(registerUserDto.password())
+            );
+            String linkToken = UUID.randomUUID().toString();
+            tempUserDataPort.save(linkToken, pendingLocalRegistration, Duration.ofMinutes(10)); // TODO: Make this configurable
+
+            throw new EmailLinkedThroughProviderException("User with this email is linked through a provider", linkToken);
         }
 
         if (userRepository.getUserByEmail(registerUserDto.email()).isPresent()) {
@@ -154,14 +162,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthTokens linkNewOAuthAccount(LinkAccountsDto linkAccountsDto) {
-        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkAccountsDto.linkToken());
+    public AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
+        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkOAuthAccountDto.linkToken());
         if (pendingOAuthRegistration == null) {
-            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + linkAccountsDto.linkToken());
+            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + linkOAuthAccountDto.linkToken());
         }
-        tempUserDataPort.delete(linkAccountsDto.linkToken());
+        tempUserDataPort.delete(linkOAuthAccountDto.linkToken());
 
-        if (linkAccountsDto.shouldLinkAccounts()) {
+        if (linkOAuthAccountDto.shouldLinkAccounts()) {
             User user = userRepository.getUserByEmailWithPassword(pendingOAuthRegistration.email())
                     .orElseThrow(() -> new UserNotFoundException("User not found or already has a password"));
 
@@ -180,6 +188,32 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return null;
+    }
+
+    @Override
+    @Transactional
+    public AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto) {
+        PendingLocalRegistration pendingLocalRegistration = (PendingLocalRegistration) tempUserDataPort.get(linkLocalAccountDto.linkToken());
+        if (pendingLocalRegistration == null) {
+            throw new InvalidRegistrationTokenException("Pending local account registration not found for token: " + linkLocalAccountDto.linkToken());
+        }
+        tempUserDataPort.delete(linkLocalAccountDto.linkToken());
+
+        if (!linkLocalAccountDto.shouldLinkAccounts()) {
+            return null;
+        }
+
+        if (userRepository.getUserByEmailWithPassword(pendingLocalRegistration.email()).isPresent()) {
+            throw new UserAlreadyExistsException("User with this email already has local account");
+        }
+
+        User user = userRepository.getUserByEmailWithoutPassword(pendingLocalRegistration.email())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        user.setPassword(pendingLocalRegistration.hashedPassword());
+        userRepository.save(user);
+
+        return generateNewAuthTokens(user);
     }
 
     @Transactional
