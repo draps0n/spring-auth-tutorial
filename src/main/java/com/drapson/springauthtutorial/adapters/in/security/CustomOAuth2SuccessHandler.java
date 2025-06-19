@@ -48,10 +48,10 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         PendingOAuthRegistration pendingOAuthRegistration =
                 new PendingOAuthRegistration(provider, sub, email, firstName, lastName);
 
-        issueTokens(response, user, email, provider,pendingOAuthRegistration);
+        issueTokens(response, user, provider, pendingOAuthRegistration);
     }
 
-    private void issueTokens(HttpServletResponse response, User user, String email, String provider, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
+    private void issueTokens(HttpServletResponse response, User user, String provider, PendingOAuthRegistration pendingOAuthRegistration) {
         if (user == null) {
             // User not found, more registration details needed
             String tempRegistrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
