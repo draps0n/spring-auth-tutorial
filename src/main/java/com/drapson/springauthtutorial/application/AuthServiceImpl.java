@@ -4,7 +4,6 @@ import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.*;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
-import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 

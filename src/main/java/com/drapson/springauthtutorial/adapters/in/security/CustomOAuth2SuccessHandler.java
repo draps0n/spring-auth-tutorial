@@ -52,19 +52,19 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
                 provider, sub, email, firstName, lastName
         );
         if (user == null) {
+            // User not found, more registration details needed
             String registrationToken = UUID.randomUUID().toString();
             tempUserDataPort.save(registrationToken, pendingOAuthRegistration, Duration.ofMinutes(10)); // TODO: make it configurable
-            System.out.println("User not found, redirecting to registration page: " + email);
             throw new AdditionalRegistrationInfoNeededException("To register, please provide additional information.", registrationToken);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
+            // User found but provider is not linked, possible account linking needed
             String linkToken = UUID.randomUUID().toString();
             tempUserDataPort.save(linkToken, pendingOAuthRegistration, Duration.ofMinutes(5)); // TODO: make it configurable
-            System.out.println("User found but provider not linked, redirecting to link account page: " + email);
             throw new EmailLinkedToAnotherAccountWithDifferentProviderException("Account linking needed.", linkToken);
         } else {
+            // User found and provider is linked, issue JWT tokens
             AuthTokens authTokens = authService.issueJwtTokens(user);
             response.setContentType("application/json");
-            System.out.println("User logged in successfully: " + user.getEmail());
             // TODO: issue cookies
         }
     }
