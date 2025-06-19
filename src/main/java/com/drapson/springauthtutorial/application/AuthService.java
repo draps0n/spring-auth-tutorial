@@ -18,5 +18,7 @@ public interface AuthService {
 
     AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto);
 
-    AuthTokens linkNewOAuthAccount(LinkAccountsDto linkAccountsDto);
+    AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
+
+    AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto);
 }
