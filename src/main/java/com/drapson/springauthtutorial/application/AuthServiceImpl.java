@@ -222,7 +222,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public String issueTemporaryRegistrationJwtToken(PendingOAuthRegistration pendingOAuthRegistration) {
+    public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
         String tempRegistrationToken = UUID.randomUUID().toString();
         tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
         return tempRegistrationToken;

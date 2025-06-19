@@ -22,5 +22,5 @@ public interface AuthService {
 
     AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto);
 
-    String issueTemporaryRegistrationJwtToken(PendingOAuthRegistration pendingOAuthRegistration);
+    String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
 }

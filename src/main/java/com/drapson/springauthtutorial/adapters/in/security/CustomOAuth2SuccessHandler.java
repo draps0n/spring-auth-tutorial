@@ -51,11 +51,11 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     private void issueTokens(HttpServletResponse response, User user, String email, String provider, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
         if (user == null) {
-            String tempRegistrationToken = authService.issueTemporaryRegistrationJwtToken(pendingOAuthRegistration);
+            String tempRegistrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
             response.sendRedirect(frontUrl + "/register-oauth?token=" + tempRegistrationToken); // TODO: throw exception
             System.out.println("User not found, redirecting to registration page: " + email);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
-            String linkToken = authService.issueTemporaryRegistrationJwtToken(pendingOAuthRegistration);
+            String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
             response.sendRedirect(frontUrl + "/link-account?token=" + linkToken); // TODO: throw exception
             System.out.println("User found but provider not linked, redirecting to link account page: " + email);
         } else {
