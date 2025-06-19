@@ -21,8 +21,8 @@ public class AuthServiceImpl implements AuthService {
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
 
-    @Value("${spring.jwt.temp_access_expiration}") private long tempTokenExpirationTime;
-    @Value("${spring.jwt.refresh_expiration}") private long refTokenExpirationTime;
+    @Value("${spring.tokens.other.temp_access_expiration}") private long tempTokenExpirationTime;
+    @Value("${spring.tokens.other.refresh_expiration}") private long refTokenExpirationTime;
 
     public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
         this.userRepository = userRepository;

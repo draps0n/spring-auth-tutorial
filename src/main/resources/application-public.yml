@@ -23,11 +23,13 @@ spring:
     init:
       mode: always
 
-  jwt:
-    secret: ${JWT_SECRET_KEY}
-    access_expiration: 7200 # in seconds
-    refresh_expiration: 604800
-    temp_access_expiration: 600
+  tokens:
+    jwt:
+      secret: ${JWT_SECRET_KEY}
+      access_expiration: 7200 # in seconds
+    other:
+      refresh_expiration: 604800
+      temp_access_expiration: 600
 
   security:
     oauth2:
