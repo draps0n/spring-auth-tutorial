@@ -38,11 +38,6 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return jpaUserRepository.findByEmail(email).map(UserMapper::toDomain);
-    }
-
-    @Override
     public Optional<User> getUserByEmailWithoutPassword(String email) {
         return jpaUserRepository.findByEmailWithoutPassword(email).map(UserMapper::toDomain);
     }
@@ -54,8 +49,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> getUserByEmail(String email) {
-        Optional<UserEntity> userEntity = jpaUserRepository.findByEmail(email);
-        return userEntity.map(UserMapper::toDomain);
+        return jpaUserRepository.findByEmail(email).map(UserMapper::toDomain);
     }
 
 }

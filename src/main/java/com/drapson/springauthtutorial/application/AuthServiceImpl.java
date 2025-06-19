@@ -43,8 +43,8 @@ public class AuthServiceImpl implements AuthService {
             throw new EmailLinkedThroughProviderException("User with this email is linked through a provider", linkToken);
         }
 
-        if (userRepository.getUserByEmail(registerUserDto.email()).isPresent()) {
-            throw new UserAlreadyExistsException("User with this email already exists");
+        if (userRepository.getUserByEmailWithPassword(registerUserDto.email()).isPresent()) {
+            throw new UserAlreadyExistsException("User with this email already has a local account");
         }
 
         User user = new User(
@@ -66,8 +66,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthTokens loginUser(LoginUserDto loginUserDto) {
         User user = userRepository
-                .getUserByEmail(loginUserDto.email())
+                .getUserByEmailWithPassword(loginUserDto.email())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
+
         if (!passwordEncoder.matches(loginUserDto.password(), user.getPassword())) {
             throw new InvalidPasswordException("Provided password is invalid");
         }

@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface UserService {
     List<GetUserListItemDto> getAllUsers();
 
-    Optional<User> findByEmail(String email);
+    Optional<User> getUserByEmail(String email);
 }

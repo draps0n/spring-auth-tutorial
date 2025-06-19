@@ -9,7 +9,6 @@ import com.drapson.springauthtutorial.domain.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -48,7 +47,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             throw new ServletException("sub is required");
         }
 
-        User user = userService.findByEmail(email).orElse(null);
+        User user = userService.getUserByEmail(email).orElse(null);
 
         PendingOAuthRegistration pendingOAuthRegistration = new PendingOAuthRegistration(
                 provider, sub, email, firstName, lastName
@@ -56,12 +55,12 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         if (user == null) {
             String tempRegistrationToken = UUID.randomUUID().toString();
             tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofMinutes(10)); // TODO: make it configurable
-            response.sendRedirect(frontUrl + "/register-oauth?token=" + tempRegistrationToken);
+            response.sendRedirect(frontUrl + "/register-oauth?token=" + tempRegistrationToken); // TODO: throw exception
             System.out.println("User not found, redirecting to registration page: " + email);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
             String linkToken = UUID.randomUUID().toString();
             tempUserDataPort.save(linkToken, pendingOAuthRegistration, Duration.ofMinutes(5)); // TODO: make it configurable
-            response.sendRedirect(frontUrl + "/link-account?token=" + linkToken);
+            response.sendRedirect(frontUrl + "/link-account?token=" + linkToken); // TODO: throw exception
             System.out.println("User found but provider not linked, redirecting to link account page: " + email);
         } else {
             AuthTokens authTokens = authService.issueJwtTokens(user);
