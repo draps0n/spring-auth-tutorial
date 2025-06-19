@@ -1,7 +1,6 @@
 package com.drapson.springauthtutorial.adapters.in.security;
 
 import com.drapson.springauthtutorial.application.AuthService;
-import com.drapson.springauthtutorial.application.TempUserDataPort;
 import com.drapson.springauthtutorial.application.UserService;
 import com.drapson.springauthtutorial.application.dtos.AuthTokens;
 import com.drapson.springauthtutorial.application.dtos.PendingOAuthRegistration;
@@ -14,6 +13,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -21,13 +21,11 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
     private final UserService userService;
     private final AuthService authService;
-    private final TempUserDataPort tempUserDataPort;
     private final String frontUrl;
 
-    public CustomOAuth2SuccessHandler(UserService userService, AuthService authService, TempUserDataPort tempUserDataPort, String frontUrl) {
+    public CustomOAuth2SuccessHandler(UserService userService, AuthService authService, String frontUrl) {
         this.userService = userService;
         this.authService = authService;
-        this.tempUserDataPort = tempUserDataPort;
         this.frontUrl = frontUrl;
     }
 
@@ -39,27 +37,28 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String email = oAuth2User.getAttribute("email");
         String firstName = oAuth2User.getAttribute("given_name");
         String lastName = oAuth2User.getAttribute("family_name");
-
-        // For now only sub is supported as a unique identifier
         String sub = oAuth2User.getAttribute("sub");
+
         if (sub == null) {
             throw new ServletException("sub is required");
         }
 
         User user = userService.getUserByEmail(email).orElse(null);
 
-        PendingOAuthRegistration pendingOAuthRegistration = new PendingOAuthRegistration(
-                provider, sub, email, firstName, lastName
-        );
+        PendingOAuthRegistration pendingOAuthRegistration =
+                new PendingOAuthRegistration(provider, sub, email, firstName, lastName);
+
+        issueTokens(response, user, email, provider,pendingOAuthRegistration);
+    }
+
+    private void issueTokens(HttpServletResponse response, User user, String email, String provider, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
         if (user == null) {
             // User not found, more registration details needed
-            String registrationToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(registrationToken, pendingOAuthRegistration, Duration.ofMinutes(10)); // TODO: make it configurable
-            throw new AdditionalRegistrationInfoNeededException("To register, please provide additional information.", registrationToken);
+            String tempRegistrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
+            throw new AdditionalRegistrationInfoNeededException("To register, please provide additional information.", tempRegistrationToken);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
             // User found but provider is not linked, possible account linking needed
-            String linkToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(linkToken, pendingOAuthRegistration, Duration.ofMinutes(5)); // TODO: make it configurable
+            String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
             throw new EmailLinkedToAnotherAccountWithDifferentProviderException("Account linking needed.", linkToken);
         } else {
             // User found and provider is linked, issue JWT tokens
@@ -68,4 +67,5 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             // TODO: issue cookies
         }
     }
+
 }
