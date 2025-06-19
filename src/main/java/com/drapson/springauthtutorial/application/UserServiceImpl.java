@@ -1,5 +1,6 @@
 package com.drapson.springauthtutorial.application;
 
+import com.drapson.springauthtutorial.adapters.out.persistence.mapper.UserMapper;
 import com.drapson.springauthtutorial.application.dtos.GetUserListItemDto;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
@@ -31,7 +32,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.getUserByEmail(email);
     }
 }
