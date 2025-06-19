@@ -1,6 +1,8 @@
 spring:
   application:
     name: spring-auth-tutorial
+  profiles:
+    default: 
 
   datasource:
     driver-class-name: org.postgresql.Driver

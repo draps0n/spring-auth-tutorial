@@ -18,7 +18,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -61,8 +60,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, TempUserDataPort tempUserDataPort, @Value("${app.front-url}") String frontUrl) {
-        return new CustomOAuth2SuccessHandler(userService, authService, tempUserDataPort, frontUrl);
+    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, @Value("${app.front-url}") String frontUrl) {
+        return new CustomOAuth2SuccessHandler(userService, authService, frontUrl);
     }
 
     @Bean
