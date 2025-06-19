@@ -152,12 +152,35 @@ public class AuthServiceImpl implements AuthService {
         return generateNewAuthTokens(user);
     }
 
-    /*@Override
-    public AuthTokens linkAccounts(LinkAccountsDto linkAccountsDto) {
-        if (linkAccountsDto.shouldLinkAccounts()) {
-
+    @Override
+    @Transactional
+    public AuthTokens linkNewOAuthAccount(LinkAccountsDto linkAccountsDto) {
+        PendingOAuthRegistration pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkAccountsDto.linkToken());
+        if (pendingOAuthRegistration == null) {
+            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for token: " + linkAccountsDto.linkToken());
         }
-    }*/
+        tempUserDataPort.delete(linkAccountsDto.linkToken());
+
+        if (linkAccountsDto.shouldLinkAccounts()) {
+            User user = userRepository.getUserByEmailWithPassword(pendingOAuthRegistration.email())
+                    .orElseThrow(() -> new UserNotFoundException("User not found or already has a password"));
+
+            if (userProviderRepository.checkIfUserHasProvider(user.getId(), pendingOAuthRegistration.provider())) {
+                throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
+            }
+
+            userProviderRepository.save(new UserOAuthProvider(
+                    UUID.randomUUID(),
+                    pendingOAuthRegistration.provider(),
+                    pendingOAuthRegistration.providerId(),
+                    user
+            ));
+
+            return generateNewAuthTokens(user);
+        }
+
+        return null;
+    }
 
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {

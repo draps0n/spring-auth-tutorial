@@ -11,8 +11,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -80,17 +78,13 @@ public class AuthController {
     }
 
 
-    /*@PostMapping("/link-oauth")
+    @PostMapping("/link-oauth")
     public ResponseEntity<AuthTokens> linkOAuthAccounts(@RequestBody @Valid LinkAccountsRequest linkAccountsRequest) {
-        AuthTokens authTokens = authService.linkAccounts(new LinkAccountsDto(
+        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkAccountsDto(
                 linkAccountsRequest.linkToken(),
-                linkAccountsRequest.shouldLinkAccounts(),
-                linkAccountsRequest.username(),
-                linkAccountsRequest.birthDate(),
-                linkAccountsRequest.sendBudgetReports(),
-                linkAccountsRequest.isProfilePublic()
+                linkAccountsRequest.shouldLinkAccounts()
         ));
-        return ResponseEntity.ok(authTokens);
-    }*/
+        return authTokens == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(authTokens);
+    }
 
 }
