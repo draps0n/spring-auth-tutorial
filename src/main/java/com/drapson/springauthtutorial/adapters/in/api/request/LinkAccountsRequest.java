@@ -12,20 +12,6 @@ public record LinkAccountsRequest(
         String linkToken,
 
         @NotNull
-        boolean shouldLinkAccounts,
-
-        @Size(min = 3, max = 20)
-        @NotBlank
-        String username,
-
-        @NotNull
-        @Past
-        LocalDate birthDate,
-
-        @NotNull
-        boolean sendBudgetReports,
-
-        @NotNull
-        boolean isProfilePublic
+        boolean shouldLinkAccounts
 ) {
 }

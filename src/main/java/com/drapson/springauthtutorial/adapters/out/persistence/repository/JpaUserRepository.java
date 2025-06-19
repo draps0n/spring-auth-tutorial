@@ -15,12 +15,9 @@ public interface JpaUserRepository extends JpaRepository<UserEntity, UUID> {
 
     boolean existsByEmail(String email);
 
-    @Query("""
-            SELECT u
-            FROM UserEntity u
-            WHERE u.email = :email
-            AND u.password IS NULL
-            """
-    )
+    @Query("SELECT u FROM UserEntity u WHERE u.email = :email AND u.password IS NULL")
     Optional<UserEntity> findByEmailWithoutPassword(String email);
+
+    @Query("SELECT u FROM UserEntity u WHERE u.email = :email AND u.password IS NOT NULL")
+    Optional<UserEntity> findByEmailWithPassword(String email);
 }

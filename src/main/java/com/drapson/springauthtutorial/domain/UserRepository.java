@@ -2,7 +2,6 @@ package com.drapson.springauthtutorial.domain;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface UserRepository {
     Optional<User> getUserByEmail(String email);
@@ -14,4 +13,6 @@ public interface UserRepository {
     Optional<User> findByEmail(String email);
 
     Optional<User> getUserByEmailWithoutPassword(String email);
+
+    Optional<User> getUserByEmailWithPassword(String email);
 }
