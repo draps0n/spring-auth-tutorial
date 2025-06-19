@@ -21,4 +21,6 @@ public interface AuthService {
     AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
 
     AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto);
+
+    String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
 }

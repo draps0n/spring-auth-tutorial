@@ -1,6 +1,8 @@
 spring:
   application:
     name: spring-auth-tutorial
+  profiles:
+    default: 
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -21,10 +23,13 @@ spring:
     init:
       mode: always
 
-  jwt:
-    secret: ${JWT_SECRET_KEY}
-    access_expiration: 864000
-    refresh_expiration: 604800000
+  tokens:
+    jwt:
+      secret: ${JWT_SECRET_KEY}
+      access_expiration: 7200 # in seconds
+    other:
+      refresh_expiration: 604800
+      temp_access_expiration: 600
 
   security:
     oauth2:
