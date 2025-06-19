@@ -1,7 +1,13 @@
 package com.drapson.springauthtutorial.application.exceptions;
 
 public class EmailLinkedThroughProviderException extends RuntimeException {
-    public EmailLinkedThroughProviderException(String message) {
+    private final String linkToken;
+    public EmailLinkedThroughProviderException(String message, String linkToken) {
         super(message);
+        this.linkToken = linkToken;
+    }
+
+    public String getLinkToken() {
+        return linkToken;
     }
 }
