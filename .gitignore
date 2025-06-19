@@ -207,3 +207,9 @@ gradle-app.setting
 # Eclipse Core
 # JDT-specific (Eclipse Java Development Tools)
 .env
+
+# Config files
+!/src/main/resources/application.yml
+.env
+!/src/main/resources/application-prod.yml
+!/src/main/resources/application-dev.yml

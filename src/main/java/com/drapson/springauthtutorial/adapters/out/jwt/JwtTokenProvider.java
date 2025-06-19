@@ -24,8 +24,8 @@ public class JwtTokenProvider implements TokenProvider {
     private final UserDetailsService userDetailsService;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expirationTime,
+            @Value("${spring.jwt.secret}") String secret,
+            @Value("${spring.jwt.access_expiration}") long expirationTime,
             UserDetailsService userDetailsService
     ) {
         this.secretKey = new SecretKeySpec(
