@@ -19,8 +19,9 @@ public enum ErrorCode {
     EMPTY_ACCESS_TOKEN(1015, "Empty Access Token"),
     INVALID_ACCESS_TOKEN(1016, "Invalid Access Token"),
     UNSUPPORTED_ACCESS_TOKEN_TYPE(1017, "Unsupported Access Token Type"),
-    ADDITIONAL_REGISTRATION_REQUIRED(1019, "Additional Registration Required"),
-    INTERNAL_SERVER_ERROR(1018, "Internal Server Error");
+    ADDITIONAL_REGISTRATION_REQUIRED(1018, "Additional Registration Required"),
+    UNAUTHORIZED(1019, "Unauthorized"),
+    INTERNAL_SERVER_ERROR(5000, "Internal Server Error");
 
     private final int code;
     private final String defaultMessage;
