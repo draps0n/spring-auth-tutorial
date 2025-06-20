@@ -27,9 +27,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNAUTHORIZED,
-                errorCode.getDefaultMessage()
+                errorCode.getTitle()
         );
-        problem.setTitle(errorCode.getDefaultMessage());
+        problem.setTitle(errorCode.getTitle());
         problem.setType(URI.create("https://inz-api.com/errors/unauthorized"));
         problem.setProperty("errorCode", errorCode.getCode());
 
