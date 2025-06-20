@@ -6,7 +6,6 @@ import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.RefreshTokenNotProvidedException;
 import com.drapson.springauthtutorial.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,7 +26,7 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
-    
+    @Operation()
     @PostMapping("/register")
     public ResponseEntity<AuthTokens> registerUser(@RequestBody @Valid RegisterUserRequest request) {
         User user = authService.registerUser(
@@ -62,8 +61,11 @@ public class AuthController {
                     ),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Invalid email or password"
-
+                            description = "Invalid email or password. Error code: " + ErrorCode.INVALID_CREDENTIALS_CODE,
+                            content = @Content(
+                                    mediaType = "application/problem+json",
+                                    schema = @Schema(implementation = ProblemDetailDto.class)
+                            )
                     )
             }
     )
