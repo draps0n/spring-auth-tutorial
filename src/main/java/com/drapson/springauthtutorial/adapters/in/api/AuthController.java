@@ -4,10 +4,14 @@ import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirements
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -49,6 +53,7 @@ public class AuthController {
         return ResponseEntity.ok(authTokens);
     }
 
+    @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
     public ResponseEntity<AuthTokens> refreshTokens(@RequestHeader("Authorization") String authorizationHeader) {
         String refreshToken = authorizationHeader.replace("Bearer ", "");
