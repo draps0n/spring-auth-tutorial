@@ -17,4 +17,12 @@ public class CookieUtil {
 //        cookie.setSecure(true);
         return cookie;
     }
+
+    public static Cookie invalidateCookie() {
+        Cookie cookie = new Cookie("REFRESH-TOKEN", "");
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        return cookie;
+    }
 }

@@ -64,6 +64,21 @@ public class AuthController {
         return ResponseEntity.ok(new AuthToken(authTokens.accessToken()));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@CookieValue(name = "REFRESH-TOKEN", required = false, defaultValue = "") String refreshToken, HttpServletResponse response){
+
+        if (refreshToken.isBlank()) {
+            throw new RefreshTokenNotProvidedException("Refresh token not provided in cookies!");
+        }
+        authService.refreshTokens(refreshToken);
+
+        Cookie refreshTokenCookie = CookieUtil.invalidateCookie();
+        response.addCookie(refreshTokenCookie);
+
+        authService.logoutUser(refreshToken);
+        return ResponseEntity.ok().build();
+    }
+
     @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
     public ResponseEntity<AuthToken> refreshTokens(
@@ -126,5 +141,4 @@ public class AuthController {
         }
         return ResponseEntity.noContent().build();
     }
-
 }
