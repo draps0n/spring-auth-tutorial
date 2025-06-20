@@ -7,6 +7,9 @@ import com.drapson.springauthtutorial.application.exceptions.RefreshTokenNotProv
 import com.drapson.springauthtutorial.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +48,25 @@ public class AuthController {
         return ResponseEntity.ok(authTokens);
     }
 
+    @Operation(
+            summary = "Login user",
+            description = "Logs in a user with email and password, returning JWT tokens.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully logged in user",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = AuthTokens.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Invalid email or password"
+
+                    )
+            }
+    )
     @PostMapping("/login")
     public ResponseEntity<AuthTokens> loginUser(@RequestBody @Valid LoginUserRequest request) {
         AuthTokens authTokens = authService.loginUser(
