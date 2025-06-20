@@ -21,6 +21,7 @@ public enum ErrorCode {
     UNSUPPORTED_ACCESS_TOKEN_TYPE(1017, "Unsupported Access Token Type"),
     ADDITIONAL_REGISTRATION_REQUIRED(1018, "Additional Registration Required"),
     UNAUTHORIZED(1019, "Unauthorized"),
+    INVALID_REFRESH_TOKEN(1020, "Invalid Refresh Token"),
     INTERNAL_SERVER_ERROR(5000, "Internal Server Error");
 
     private final int code;

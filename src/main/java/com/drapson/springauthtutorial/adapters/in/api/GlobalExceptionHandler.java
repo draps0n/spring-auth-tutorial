@@ -199,6 +199,16 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(RefreshTokenNotProvidedException.class)
+    public ProblemDetail handleRefreshTokenNotProvided(RefreshTokenNotProvidedException ex) {
+        ErrorCode error = ErrorCode.INVALID_REFRESH_TOKEN;
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle(error.getDefaultMessage());
+        problem.setType(URI.create("https://inz-api.com/errors/invalid-refresh-token"));
+        problem.setProperty("errorCode", error.getCode());
+        return problem;
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleOther() {
         ErrorCode error = ErrorCode.INTERNAL_SERVER_ERROR;
