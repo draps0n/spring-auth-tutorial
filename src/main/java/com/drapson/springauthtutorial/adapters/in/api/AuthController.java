@@ -3,10 +3,13 @@ package com.drapson.springauthtutorial.adapters.in.api;
 import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
+import com.drapson.springauthtutorial.application.exceptions.RefreshTokenNotProvidedException;
 import com.drapson.springauthtutorial.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,7 +58,12 @@ public class AuthController {
 
     @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
-    public ResponseEntity<AuthTokens> refreshTokens(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<AuthTokens> refreshTokens(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new RefreshTokenNotProvidedException("No refresh token provided or it is malformed");
+        }
+
         String refreshToken = authorizationHeader.replace("Bearer ", "");
         AuthTokens authTokens = authService.refreshTokens(refreshToken);
         return ResponseEntity.ok(authTokens);
