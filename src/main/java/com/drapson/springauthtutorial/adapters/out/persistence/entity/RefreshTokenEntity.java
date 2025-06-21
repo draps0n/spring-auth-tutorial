@@ -1,6 +1,7 @@
 package com.drapson.springauthtutorial.adapters.out.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

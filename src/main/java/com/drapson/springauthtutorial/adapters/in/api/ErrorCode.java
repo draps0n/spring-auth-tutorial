@@ -1,9 +1,6 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
-
-import java.net.URI;
 
 public enum ErrorCode {
 
@@ -27,7 +24,8 @@ public enum ErrorCode {
     ADDITIONAL_REGISTRATION_REQUIRED(ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED_CODE, "Additional Registration Required", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(ErrorCode.UNAUTHORIZED_CODE, "Unauthorized", HttpStatus.UNAUTHORIZED),
     INVALID_REFRESH_TOKEN(ErrorCode.INVALID_REFRESH_TOKEN_CODE, "Invalid Refresh Token", HttpStatus.UNAUTHORIZED),
-    INTERNAL_SERVER_ERROR(ErrorCode.INTERNAL_SERVER_ERROR_CODE, "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_SERVER_ERROR(ErrorCode.INTERNAL_SERVER_ERROR_CODE, "Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR),
+    MISSING_REFRESH_TOKEN_COOKIE(ErrorCode.MISSING_REFRESH_TOKEN_COOKIE_CODE, "Missing Refresh Token Cookie", HttpStatus.BAD_REQUEST);
 
     public static final int VALIDATION_ERROR_CODE = 1001;
     public static final int ACCESS_DENIED_CODE = 1002;
@@ -50,6 +48,7 @@ public enum ErrorCode {
     public static final int UNAUTHORIZED_CODE = 1019;
     public static final int INVALID_REFRESH_TOKEN_CODE = 1020;
     public static final int INTERNAL_SERVER_ERROR_CODE = 5000;
+    public static final int MISSING_REFRESH_TOKEN_COOKIE_CODE = 1021;
 
     private final int code;
     private final String title;
