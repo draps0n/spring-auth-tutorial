@@ -1,6 +1,5 @@
-package com.drapson.springauthtutorial.adapters.in.api;
+package com.drapson.springauthtutorial.adapters.in.api.util;
 
-import com.drapson.springauthtutorial.application.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

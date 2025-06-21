@@ -1,6 +1,7 @@
 package com.drapson.springauthtutorial.adapters.out.persistence.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "users")
+@DynamicUpdate // worth considering
 public class UserEntity {
     @Id
     private UUID id;
@@ -42,6 +44,9 @@ public class UserEntity {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserOAuthProviderEntity> userOAuthProviders = new HashSet<>();
+
+    @Version
+    private long version;
 
     public UserEntity() {
     }
