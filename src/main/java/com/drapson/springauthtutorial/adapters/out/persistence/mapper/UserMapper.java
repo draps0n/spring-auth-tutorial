@@ -9,7 +9,12 @@ public class UserMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
-                user.getUsername()
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getBirthDate(),
+                user.isSendBudgetReports(),
+                user.isProfilePublic()
         );
     }
 
@@ -18,7 +23,12 @@ public class UserMapper {
                 userEntity.getId(),
                 userEntity.getEmail(),
                 userEntity.getPassword(),
-                userEntity.getUsername()
+                userEntity.getUsername(),
+                userEntity.getFirstName(),
+                userEntity.getLastName(),
+                userEntity.getBirthDate(),
+                userEntity.isSendBudgetReports(),
+                userEntity.isProfilePublic()
         );
     }
 }

@@ -1,7 +1,11 @@
 package com.drapson.springauthtutorial.adapters.out.jwt;
 
 import com.drapson.springauthtutorial.application.TokenProvider;
+import com.drapson.springauthtutorial.application.exceptions.AccessTokenExpiredException;
+import com.drapson.springauthtutorial.application.exceptions.EmptyAccessTokenException;
+import com.drapson.springauthtutorial.application.exceptions.InvalidAccessTokenException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.UnsupportedJwtException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,19 +24,19 @@ import java.util.UUID;
 public class JwtTokenProvider implements TokenProvider {
 
     private final SecretKey secretKey;
-    private final long expirationTime;
+    private final long accessTokenExpirationTime;
     private final UserDetailsService userDetailsService;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expirationTime,
+            @Value("${spring.tokens.jwt.secret}") String secretKey,
+            @Value("${spring.tokens.jwt.access_expiration}") long accessTokenExpirationTime,
             UserDetailsService userDetailsService
     ) {
         this.secretKey = new SecretKeySpec(
-                secret.getBytes(StandardCharsets.UTF_8),
+                secretKey.getBytes(StandardCharsets.UTF_8),
                 "HmacSHA256"
         );
-        this.expirationTime = expirationTime;
+        this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.userDetailsService = userDetailsService;
     }
 
@@ -42,7 +46,7 @@ public class JwtTokenProvider implements TokenProvider {
                 .subject(email)
                 .claim("userId", userId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .expiration(new Date(System.currentTimeMillis() + (accessTokenExpirationTime * 1000L)))
                 .signWith(secretKey)
                 .compact();
     }
@@ -54,22 +58,16 @@ public class JwtTokenProvider implements TokenProvider {
                     .verifyWith(secretKey)
                     .build()
                     .parseSignedClaims(token);
-            System.out.println("JWT is valid");
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | io.jsonwebtoken.MalformedJwtException e) {
-            System.out.println("Invalid JWT signature or token");
-            // nieprawidłowy podpis lub token
+            throw new InvalidAccessTokenException("Invalid token");
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            System.out.println("Token has expired");
-            // token wygasł
+            throw new AccessTokenExpiredException("Token has expired");
         } catch (io.jsonwebtoken.UnsupportedJwtException e) {
-            System.out.println("Unsupported token");
-            // nieobsługiwany token
+            throw new UnsupportedJwtException("Provided token format is not supported");
         } catch (IllegalArgumentException e) {
-            System.out.println("Token is empty or null");
-            // pusty token
+            throw new EmptyAccessTokenException("Access token is empty");
         }
-        return false;
     }
 
     @Override

@@ -1,63 +1,134 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
-import com.drapson.springauthtutorial.adapters.in.api.request.LoginUserRequest;
-import com.drapson.springauthtutorial.adapters.in.api.request.RegisterUserRequest;
+import com.drapson.springauthtutorial.adapters.in.api.request.*;
+import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
+import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
-import com.drapson.springauthtutorial.application.dtos.AuthTokens;
-import com.drapson.springauthtutorial.application.dtos.CreatedUser;
-import com.drapson.springauthtutorial.application.dtos.LoginUserDto;
-import com.drapson.springauthtutorial.application.dtos.RegisterUserDto;
+import com.drapson.springauthtutorial.application.dtos.*;
+import com.drapson.springauthtutorial.domain.User;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
-
+@SecurityRequirements
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
+    private final CookieUtil cookieUtil;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, CookieUtil cookieUtil) {
         this.authService = authService;
-    }
-
-    @GetMapping
-    public ResponseEntity<String> testEndpoint() {
-        return ResponseEntity.ok("Use POST on /register to register a user");
+        this.cookieUtil = cookieUtil;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody @Valid RegisterUserRequest request) {
-        CreatedUser createdUser = authService.registerUser(
+    public ResponseEntity<AccessTokenResponse> registerUser(@RequestBody @Valid RegisterUserRequest request,
+                                                            HttpServletResponse response) {
+        User user = authService.registerUser(
                 new RegisterUserDto(
                         request.email(),
                         request.password(),
-                        request.username()
+                        request.username(),
+                        request.firstName(),
+                        request.lastName(),
+                        request.birthDate(),
+                        request.sendBudgetReports(),
+                        request.isProfilePublic()
                 )
         );
-        return ResponseEntity
-                .created(URI.create("/api/v1/users/" + createdUser.id()))
-                .body("User registered successfully");
+        AuthTokens authTokens = authService.issueJwtTokens(user);
+
+        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        response.addCookie(refreshTokenCookie);
+
+        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthTokens> loginUser(@RequestBody @Valid LoginUserRequest request) {
+    public ResponseEntity<AccessTokenResponse> loginUser(@RequestBody @Valid LoginUserRequest request,
+                                                         HttpServletResponse response) {
         AuthTokens authTokens = authService.loginUser(
                 new LoginUserDto(
                         request.email(),
                         request.password()
                 )
         );
-        return ResponseEntity.ok(authTokens);
+        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        response.addCookie(refreshTokenCookie);
+
+        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response){
+        authService.logoutUser(refreshToken);
+        response.addCookie(cookieUtil.invalidateCookie());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
-    public ResponseEntity<AuthTokens> refreshTokens(@RequestHeader("Authorization") String authorizationHeader) {
-        String refreshToken = authorizationHeader.replace("Bearer ", "");
+    public ResponseEntity<AccessTokenResponse> refreshTokens(
+            @CookieValue(name = "REFRESH-TOKEN") String refreshToken) {
         AuthTokens authTokens = authService.refreshTokens(refreshToken);
-        return ResponseEntity.ok(authTokens);
+
+        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
 
+    @PostMapping("/finish-oauth-registration")
+    public ResponseEntity<AccessTokenResponse> finishOAuthRegistration(@RequestBody @Valid AdditionalRegistrationInfoRequest additionalRegistrationInfoRequest,
+                                                                       HttpServletResponse response) {
+        AuthTokens authTokens = authService.finishOAuthRegistration(new FinishOAuthRegistrationDto(
+                additionalRegistrationInfoRequest.token(),
+                additionalRegistrationInfoRequest.username(),
+                additionalRegistrationInfoRequest.birthDate(),
+                additionalRegistrationInfoRequest.sendBudgetReports(),
+                additionalRegistrationInfoRequest.isProfilePublic()
+        ));
+
+        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        response.addCookie(refreshTokenCookie);
+
+        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+    }
+
+    @PostMapping("/link-oauth")
+    public ResponseEntity<AccessTokenResponse> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
+                                                                 HttpServletResponse response) {
+        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
+                linkOAuthAccountRequest.linkToken(),
+                linkOAuthAccountRequest.shouldLinkAccounts()
+        ));
+
+        if (authTokens != null) {
+            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+            response.addCookie(refreshTokenCookie);
+
+            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/link-local")
+    public ResponseEntity<AccessTokenResponse> linkLocalAccount(@RequestBody @Valid LinkLocalAccountRequest linkLocalAccountRequest,
+                                                                HttpServletResponse response) {
+        AuthTokens authTokens = authService.linkNewLocalAccount(new LinkLocalAccountDto(
+                linkLocalAccountRequest.linkToken(),
+                linkLocalAccountRequest.shouldLinkAccounts()
+        ));
+        if (authTokens != null) {
+            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+            response.addCookie(refreshTokenCookie);
+
+            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+        }
+        return ResponseEntity.noContent().build();
+    }
 }

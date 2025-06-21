@@ -1,29 +1,134 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.drapson.springauthtutorial.adapters.in.security.AdditionalRegistrationInfoNeededException;
+import com.drapson.springauthtutorial.adapters.in.security.EmailLinkedToAnotherAccountWithDifferentProviderException;
+import com.drapson.springauthtutorial.application.exceptions.*;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.time.format.DateTimeParseException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidation(MethodArgumentNotValidException ex) {
-        return ResponseEntity.badRequest().body("Błąd walidacji: " + ex.getMessage());
+    @ExceptionHandler({MethodArgumentNotValidException.class, DateTimeParseException.class})
+    public ProblemDetail handleValidation(Exception ex) {
+        return formatErrorResponse(ErrorCode.VALIDATION_ERROR, ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Brak dostępu");
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        return formatErrorResponse(ErrorCode.ACCESS_DENIED, ex.getMessage());
+    }
+
+    @ExceptionHandler(EmailLinkedThroughProviderException.class)
+    public ProblemDetail handleEmailLinked(EmailLinkedThroughProviderException ex) {
+        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_PROVIDER, ex.getMessage());
+        problem.setProperty("linkToken", ex.getLinkToken());
+        return problem;
+    }
+
+    @ExceptionHandler(EmailLinkedToAnotherAccountWithDifferentProviderException.class)
+    public ProblemDetail handleEmailLinkedLocal(EmailLinkedToAnotherAccountWithDifferentProviderException ex) {
+        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_LOCAL, ex.getMessage());
+        problem.setProperty("linkToken", ex.getLinkToken());
+        return problem;
+    }
+
+    @ExceptionHandler(AdditionalRegistrationInfoNeededException.class)
+    public ProblemDetail handleAdditionalRegistrationInfoNeeded(AdditionalRegistrationInfoNeededException ex) {
+        ProblemDetail problem = formatErrorResponse(ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED, ex.getMessage());
+        problem.setProperty("registrationToken", ex.getRegistrationToken());
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidPassword(InvalidCredentialsException ex) {
+        return formatErrorResponse(ErrorCode.INVALID_CREDENTIALS, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidLinkTokenException.class)
+    public ProblemDetail handleInvalidLinkToken(InvalidLinkTokenException ex) {
+        return formatErrorResponse(ErrorCode.INVALID_LINK_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidRegistrationTokenException.class)
+    public ProblemDetail handleInvalidRegistrationToken(InvalidRegistrationTokenException ex) {
+        return formatErrorResponse(ErrorCode.INVALID_REGISTRATION_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(RefreshTokenExpiredException.class)
+    public ProblemDetail handleRefreshTokenExpired(RefreshTokenExpiredException ex) {
+        return formatErrorResponse(ErrorCode.REFRESH_TOKEN_EXPIRED, ex.getMessage());
+    }
+
+    @ExceptionHandler(RefreshTokenUnknownException.class)
+    public ProblemDetail handleRefreshTokenNotFound(RefreshTokenUnknownException ex) {
+        return formatErrorResponse(ErrorCode.REFRESH_TOKEN_UNKNOWN, ex.getMessage());
+    }
+
+    @ExceptionHandler(RefreshTokenRevokedException.class)
+    public ProblemDetail handleRefreshTokenRevoked(RefreshTokenRevokedException ex) {
+        return formatErrorResponse(ErrorCode.REFRESH_TOKEN_REVOKED, ex.getMessage());
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ProblemDetail handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return formatErrorResponse(ErrorCode.USER_ALREADY_EXISTS, ex.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex) {
+        return formatErrorResponse(ErrorCode.USER_NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(LinkedUserNotFoundException.class)
+    public ProblemDetail handleLinkedUserNotFound(LinkedUserNotFoundException ex) {
+        return formatErrorResponse(ErrorCode.LINKED_USER_NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessTokenExpiredException.class)
+    public ProblemDetail handleAccessTokenExpired(AccessTokenExpiredException ex) {
+        return formatErrorResponse(ErrorCode.ACCESS_TOKEN_EXPIRED, ex.getMessage());
+    }
+
+    @ExceptionHandler(EmptyAccessTokenException.class)
+    public ProblemDetail handleEmptyAccessToken(EmptyAccessTokenException ex) {
+        return formatErrorResponse(ErrorCode.EMPTY_ACCESS_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException.class)
+    public ProblemDetail handleInvalidAccessToken(InvalidAccessTokenException ex) {
+        return formatErrorResponse(ErrorCode.INVALID_ACCESS_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnsupportedAccessTokenException.class)
+    public ProblemDetail handleUnsupportedAccessTokenType(UnsupportedAccessTokenException ex) {
+        return formatErrorResponse(ErrorCode.UNSUPPORTED_ACCESS_TOKEN_TYPE, ex.getMessage());
+    }
+
+    @ExceptionHandler(RefreshTokenNotProvidedException.class)
+    public ProblemDetail handleRefreshTokenNotProvided(RefreshTokenNotProvidedException ex) {
+        return formatErrorResponse(ErrorCode.INVALID_REFRESH_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ProblemDetail handleMissingCookie(MissingRequestCookieException ex) {
+        return formatErrorResponse(ErrorCode.MISSING_REFRESH_TOKEN_COOKIE, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleOther(Exception ex) {
+    public ProblemDetail handleOther() {
+        return ErrorCode.INTERNAL_SERVER_ERROR.getProblemDetail();
+    }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Błąd serwera");
+    private ProblemDetail formatErrorResponse(ErrorCode error, String detail) {
+        ProblemDetail problem = error.getProblemDetail();
+        problem.setDetail(detail);
+        return problem;
     }
 }
