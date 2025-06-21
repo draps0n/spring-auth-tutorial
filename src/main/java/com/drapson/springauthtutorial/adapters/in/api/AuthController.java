@@ -2,6 +2,7 @@ package com.drapson.springauthtutorial.adapters.in.api;
 
 import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.application.AuthService;
+import com.drapson.springauthtutorial.application.CookieUtil;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.RefreshTokenNotProvidedException;
 import com.drapson.springauthtutorial.domain.User;
@@ -72,7 +73,7 @@ public class AuthController {
         }
         authService.refreshTokens(refreshToken);
 
-        Cookie refreshTokenCookie = CookieUtil.invalidateCookie();
+        Cookie refreshTokenCookie = cookieUtil.invalidateCookie();
         response.addCookie(refreshTokenCookie);
 
         authService.logoutUser(refreshToken);
