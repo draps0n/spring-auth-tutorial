@@ -21,21 +21,19 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
-    private final TransactionTemplate transactionTemplate;
 
     @Value("${spring.tokens.other.temp_access_expiration}")
     private long tempTokenExpirationTime;
     @Value("${spring.tokens.other.refresh_expiration}")
     private long refTokenExpirationTime;
 
-    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort, TransactionTemplate transactionTemplate) {
+    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userProviderRepository = userProviderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.tempUserDataPort = tempUserDataPort;
-        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -92,15 +90,14 @@ public class AuthServiceImpl implements AuthService {
             throw new RefreshTokenNotProvidedException("Refresh token is blank value");
         }
         String hashedToken = tokenProvider.hashToken(token);
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            RefreshToken refreshToken = refreshTokenRepository
-                    .getRefreshTokenByHashedToken(hashedToken)
-                    .orElseThrow(() -> new RefreshTokenUnknownException("Refresh token not found"));
 
-            if (!refreshToken.expiresAt().isBefore(LocalDateTime.now()) && !refreshToken.revoked()) {
-                refreshTokenRepository.updateRevokedStatus(refreshToken.id(), true);
-            }
-        });
+        RefreshToken refreshToken = refreshTokenRepository
+                .getRefreshTokenByHashedToken(hashedToken)
+                .orElseThrow(() -> new RefreshTokenUnknownException("Refresh token not found"));
+
+        if (!refreshToken.expiresAt().isBefore(LocalDateTime.now()) && !refreshToken.revoked()) {
+            refreshTokenRepository.updateRevokedStatus(refreshToken.id(), true);
+        }
     }
 
     @Override
@@ -140,9 +137,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UserNotFoundException("User not found");
         }
 
-        return Boolean.TRUE.equals(transactionTemplate
-                .execute(status -> userProviderRepository
-                        .checkIfUserHasProvider(user.getId(), provider)));
+        return userProviderRepository.checkIfUserHasProvider(user.getId(), provider);
     }
 
     @Override
@@ -255,9 +250,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
         String tempRegistrationToken = UUID.randomUUID().toString();
-        transactionTemplate.executeWithoutResult(transactionStatus -> {
-            tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
-        });
+        tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
 
         return tempRegistrationToken;
     }

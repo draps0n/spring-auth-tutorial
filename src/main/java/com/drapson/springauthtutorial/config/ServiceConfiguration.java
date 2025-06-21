@@ -22,11 +22,9 @@ public class ServiceConfiguration {
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort,
-            TransactionTemplate transactionTemplate
-
+            TempUserDataPort tempUserDataPort
     ) {
-        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort, transactionTemplate);
+        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort);
     }
 
 }
