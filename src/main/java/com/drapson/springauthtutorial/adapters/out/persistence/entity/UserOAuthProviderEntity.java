@@ -20,6 +20,9 @@ public class UserOAuthProviderEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    @Version
+    private long version;
+
     public UserOAuthProviderEntity() {
     }
 
