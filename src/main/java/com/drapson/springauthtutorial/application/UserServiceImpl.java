@@ -1,6 +1,5 @@
 package com.drapson.springauthtutorial.application;
 
-import com.drapson.springauthtutorial.adapters.out.persistence.mapper.UserMapper;
 import com.drapson.springauthtutorial.application.dtos.GetUserListItemDto;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;

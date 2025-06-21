@@ -5,6 +5,7 @@ import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Configuration
 public class ServiceConfiguration {
@@ -21,10 +22,11 @@ public class ServiceConfiguration {
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort
+            TempUserDataPort tempUserDataPort,
+            TransactionTemplate transactionTemplate
 
     ) {
-        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort);
+        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort, transactionTemplate);
     }
 
 }
