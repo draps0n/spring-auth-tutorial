@@ -7,6 +7,7 @@ import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -21,8 +22,10 @@ public class AuthServiceImpl implements AuthService {
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
 
-    @Value("${spring.tokens.other.temp_access_expiration}") private long tempTokenExpirationTime;
-    @Value("${spring.tokens.other.refresh_expiration}") private long refTokenExpirationTime;
+    @Value("${spring.tokens.other.temp_access_expiration}")
+    private long tempTokenExpirationTime;
+    @Value("${spring.tokens.other.refresh_expiration}")
+    private long refTokenExpirationTime;
 
     public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
         this.userRepository = userRepository;
@@ -42,7 +45,7 @@ public class AuthServiceImpl implements AuthService {
                     passwordEncoder.encode(registerUserDto.password())
             );
             String linkToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(linkToken, pendingLocalRegistration,Duration.ofSeconds(tempTokenExpirationTime));
+            tempUserDataPort.save(linkToken, pendingLocalRegistration, Duration.ofSeconds(tempTokenExpirationTime));
 
             throw new EmailLinkedThroughProviderException("User with this email is linked through a provider", linkToken);
         }
@@ -69,6 +72,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthTokens loginUser(LoginUserDto loginUserDto) {
+
         User user = userRepository
                 .getUserByEmailWithPassword(loginUserDto.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Login credentials are invalid"));
@@ -82,7 +86,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logoutUser(String token) {
+        if (token.isBlank()) {
+            throw new RefreshTokenNotProvidedException("Refresh token is blank value");
+        }
         String hashedToken = tokenProvider.hashToken(token);
+
         RefreshToken refreshToken = refreshTokenRepository
                 .getRefreshTokenByHashedToken(hashedToken)
                 .orElseThrow(() -> new RefreshTokenUnknownException("Refresh token not found"));
@@ -243,6 +251,7 @@ public class AuthServiceImpl implements AuthService {
     public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
         String tempRegistrationToken = UUID.randomUUID().toString();
         tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
+
         return tempRegistrationToken;
     }
 

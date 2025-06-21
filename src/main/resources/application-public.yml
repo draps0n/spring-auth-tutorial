@@ -18,6 +18,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+      hikari:
+        auto-commit: false
 
   sql:
     init:
