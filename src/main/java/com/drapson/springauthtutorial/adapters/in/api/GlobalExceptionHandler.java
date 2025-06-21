@@ -5,6 +5,7 @@ import com.drapson.springauthtutorial.adapters.in.security.EmailLinkedToAnotherA
 import com.drapson.springauthtutorial.application.exceptions.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -113,6 +114,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RefreshTokenNotProvidedException.class)
     public ProblemDetail handleRefreshTokenNotProvided(RefreshTokenNotProvidedException ex) {
         return formatErrorResponse(ErrorCode.INVALID_REFRESH_TOKEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ProblemDetail handleMissingCookie(MissingRequestCookieException ex) {
+        return formatErrorResponse(ErrorCode.MISSING_REFRESH_TOKEN_COOKIE, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
