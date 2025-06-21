@@ -82,6 +82,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logoutUser(String token) {
+        if(token.isBlank()){
+            throw new RefreshTokenNotProvidedException("Refresh token is blank value");
+        }
         String hashedToken = tokenProvider.hashToken(token);
         RefreshToken refreshToken = refreshTokenRepository
                 .getRefreshTokenByHashedToken(hashedToken)
