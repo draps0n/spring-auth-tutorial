@@ -45,9 +45,6 @@ public class UserEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserOAuthProviderEntity> userOAuthProviders = new HashSet<>();
 
-    @Version
-    private long version;
-
     public UserEntity() {
     }
 
