@@ -1,12 +1,13 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
+import com.drapson.springauthtutorial.application.CookieUtil;
 import jakarta.servlet.http.Cookie;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CookieUtil {
-    @Value("${security.jwt.refresh-expiry}")
+public class CookieUtilImpl implements CookieUtil {
+    @Value("${spring.tokens.cookie.expires-in}")
     private long refreshTokenExpiry;
 
     public Cookie createRefreshTokenCookie(String token) {
@@ -18,7 +19,7 @@ public class CookieUtil {
         return cookie;
     }
 
-    public static Cookie invalidateCookie() {
+    public Cookie invalidateCookie() {
         Cookie cookie = new Cookie("REFRESH-TOKEN", "");
         cookie.setPath("/");
         cookie.setHttpOnly(true);
