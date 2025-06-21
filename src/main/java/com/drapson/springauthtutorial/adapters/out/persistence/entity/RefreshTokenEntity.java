@@ -8,7 +8,6 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "refresh_tokens")
-@DynamicUpdate
 public class RefreshTokenEntity {
     @Id
     private UUID id;
@@ -28,9 +27,6 @@ public class RefreshTokenEntity {
 
     @Column(name = "revoked", nullable = false)
     private boolean revoked;
-
-    @Version
-    private long version;
 
     public RefreshTokenEntity() {
     }
