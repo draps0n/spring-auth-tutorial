@@ -7,7 +7,7 @@ public enum ErrorCode {
     VALIDATION_ERROR(ErrorCode.VALIDATION_ERROR_CODE, "Validation Error", HttpStatus.BAD_REQUEST),
     ACCESS_DENIED(ErrorCode.ACCESS_DENIED_CODE, "Access Denied", HttpStatus.FORBIDDEN),
     EMAIL_LINKED_THROUGH_PROVIDER(ErrorCode.EMAIL_LINKED_THROUGH_PROVIDER_CODE, "Email is already linked through another provider", HttpStatus.CONFLICT),
-    EMAIL_LINKED_THROUGH_LOCAL(ErrorCode.EMAIL_LINKED_THROUGH_LOCAL_CODE, "Email is already linked through local account", HttpStatus.CONFLICT),
+    EMAIL_USED_BY_DIFFERENT_PROVIDER(ErrorCode.EMAIL_LINKED_THROUGH_LOCAL_CODE, "Email is already used for account with different provider", HttpStatus.CONFLICT),
     INVALID_CREDENTIALS(ErrorCode.INVALID_CREDENTIALS_CODE, "Invalid Credentials", HttpStatus.UNAUTHORIZED),
     INVALID_LINK_TOKEN(ErrorCode.INVALID_LINK_TOKEN_CODE, "Invalid Link Token", HttpStatus.BAD_REQUEST),
     INVALID_REGISTRATION_TOKEN(ErrorCode.INVALID_REGISTRATION_TOKEN_CODE, "Invalid Registration Token", HttpStatus.BAD_REQUEST),
@@ -47,8 +47,8 @@ public enum ErrorCode {
     public static final int ADDITIONAL_REGISTRATION_REQUIRED_CODE = 1018;
     public static final int UNAUTHORIZED_CODE = 1019;
     public static final int INVALID_REFRESH_TOKEN_CODE = 1020;
-    public static final int INTERNAL_SERVER_ERROR_CODE = 5000;
     public static final int MISSING_REFRESH_TOKEN_COOKIE_CODE = 1021;
+    public static final int INTERNAL_SERVER_ERROR_CODE = 5000;
 
     private final int code;
     private final String title;
@@ -66,6 +66,10 @@ public enum ErrorCode {
 
     public String getTitle() {
         return title;
+    }
+
+    public HttpStatus getStatus() {
+        return status;
     }
 
     public ProblemDetailDto getProblemDetail() {

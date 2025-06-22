@@ -1,5 +1,7 @@
 package com.drapson.springauthtutorial.adapters.in.security;
 
+import com.drapson.springauthtutorial.adapters.in.api.ErrorCode;
+import com.drapson.springauthtutorial.adapters.in.api.ProblemDetailDto;
 import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
 import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
@@ -50,32 +52,64 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         PendingOAuthRegistration pendingOAuthRegistration =
                 new PendingOAuthRegistration(provider, sub, email, firstName, lastName);
 
-        issueTokens(response, user, provider, pendingOAuthRegistration);
-    }
-
-    private void issueTokens(HttpServletResponse response, User user, String provider, PendingOAuthRegistration pendingOAuthRegistration) {
         if (user == null) {
             // User not found, more registration details needed
-            String tempRegistrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-            throw new AdditionalRegistrationInfoNeededException("To register, please provide additional information.", tempRegistrationToken);
+            processOAuth2Registration(response, pendingOAuthRegistration);
         } else if (!authService.checkIfUserHasProvider(user, provider)) {
             // User found but provider is not linked, possible account linking needed
-            String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-            throw new EmailLinkedToAnotherAccountWithDifferentProviderException("Account linking needed.", linkToken);
+            processPossibleOAuth2AccountLinking(response, pendingOAuthRegistration);
         } else {
             // User found and provider is linked, issue JWT tokens
-            AuthTokens authTokens = authService.issueJwtTokens(user);
-            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(authTokens.accessToken());
-            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            response.addCookie(refreshTokenCookie);
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
-            try {
-                String json = objectMapper.writeValueAsString(accessTokenResponse);
-                response.getWriter().write(json);
-            } catch (Exception e) {
-                throw new RuntimeException("Error writing response: ", e);
-            }
+            processStandardOAuth2SignIn(response, user);
+        }
+    }
+
+    private void processOAuth2Registration(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) {
+        ErrorCode errorCode = ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED;
+        String registrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
+        ProblemDetailDto problem = errorCode.getProblemDetail();
+        problem.setDetail("To register, please provide additional information");
+        problem.setProperty("registrationToken", registrationToken);
+
+        try {
+            String json = objectMapper.writeValueAsString(problem);
+            response.setStatus(errorCode.getStatus().value());
+            response.setContentType("application/problem+json");
+            response.getWriter().write(json);
+        } catch (Exception e) {
+            throw new RuntimeException("Error writing response: ", e);
+        }
+    }
+
+    private void processPossibleOAuth2AccountLinking(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) {
+        ErrorCode errorCode = ErrorCode.EMAIL_USED_BY_DIFFERENT_PROVIDER;
+        String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
+        ProblemDetailDto problem = errorCode.getProblemDetail();
+        problem.setDetail("Account linking needed. Please link your account with the existing user.");
+        problem.setProperty("linkToken", linkToken);
+
+        try {
+            String json = objectMapper.writeValueAsString(problem);
+            response.setStatus(errorCode.getStatus().value());
+            response.setContentType("application/problem+json");
+            response.getWriter().write(json);
+        } catch (Exception e) {
+            throw new RuntimeException("Error writing response: ", e);
+        }
+    }
+
+    private void processStandardOAuth2SignIn(HttpServletResponse response, User user) {
+        AuthTokens authTokens = authService.issueJwtTokens(user);
+        AccessTokenResponse accessTokenResponse = new AccessTokenResponse(authTokens.accessToken());
+        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        response.addCookie(refreshTokenCookie);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/json");
+        try {
+            String json = objectMapper.writeValueAsString(accessTokenResponse);
+            response.getWriter().write(json);
+        } catch (Exception e) {
+            throw new RuntimeException("Error writing response: ", e);
         }
     }
 

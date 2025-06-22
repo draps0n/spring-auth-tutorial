@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailLinkedToAnotherAccountWithDifferentProviderException.class)
     public ProblemDetail handleEmailLinkedLocal(EmailLinkedToAnotherAccountWithDifferentProviderException ex) {
-        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_LOCAL, ex.getMessage());
+        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_USED_BY_DIFFERENT_PROVIDER, ex.getMessage());
         problem.setProperty("linkToken", ex.getLinkToken());
         return problem;
     }
