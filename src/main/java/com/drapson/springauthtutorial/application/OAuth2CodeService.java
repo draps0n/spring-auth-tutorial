@@ -9,4 +9,5 @@ public interface OAuth2CodeService {
     Map<String, String> exchangeCodeForTokens(String code, String codeVerifier);
 
     GoogleUserDto extractUserInfoFromIdToken(String idToken);
+
 }

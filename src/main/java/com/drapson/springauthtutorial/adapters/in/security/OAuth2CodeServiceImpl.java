@@ -1,5 +1,7 @@
 package com.drapson.springauthtutorial.adapters.in.security;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.drapson.springauthtutorial.application.OAuth2CodeService;
 import com.drapson.springauthtutorial.application.dtos.GoogleUserDto;
 import io.jsonwebtoken.Claims;
@@ -11,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.List;
 import java.util.Map;
 
 public class OAuth2CodeServiceImpl implements OAuth2CodeService {
@@ -46,16 +49,14 @@ public class OAuth2CodeServiceImpl implements OAuth2CodeService {
 
     @Override
     public GoogleUserDto extractUserInfoFromIdToken(String idToken) {
-        Claims claims = Jwts.parser()
-                .build()
-                .parseSignedClaims(idToken)
-                .getPayload();
+        DecodedJWT jwt = JWT.decode(idToken);
 
         return new GoogleUserDto(
-                claims.get("sub", String.class),
-                claims.get("email", String.class),
-                claims.get("name", String.class),
-                claims.get("picture", String.class)
+                jwt.getClaim("sub").asString(),
+                jwt.getClaim("email").asString(),
+                jwt.getClaim("given_name").asString(),
+                jwt.getClaim("family_name").asString()
         );
     }
+
 }

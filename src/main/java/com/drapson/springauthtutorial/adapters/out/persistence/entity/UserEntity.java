@@ -21,7 +21,7 @@ public class UserEntity {
     @Column(name = "password")
     private String password;
 
-    @Column(name = "username", unique = true, nullable = false)
+    @Column(name = "username", nullable = false)
     private String username;
 
     @Column(name = "first_name", nullable = false)
@@ -30,7 +30,7 @@ public class UserEntity {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "birth_date", nullable = false)
+    @Column(name = "birth_date", nullable = true)
     private LocalDate birthDate;
 
     @Column(name = "send_budget_reports", nullable = false)

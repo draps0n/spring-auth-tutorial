@@ -1,8 +1,9 @@
 package com.drapson.springauthtutorial.application.dtos;
 
-public record LinkOAuthAccountDto(
-        String linkToken,
-        boolean shouldLinkAccounts,
+public record GoogleLoginDTO(
+        boolean isNewUser,
+        String accessToken,
+        String refreshToken,
         String providerId,
         String providerName,
         String email

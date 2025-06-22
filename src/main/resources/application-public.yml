@@ -44,6 +44,7 @@ spring:
               - openid
               - profile
               - email
+              - https://www.googleapis.com/auth/user.birthday.read
 
 logging:
   level:

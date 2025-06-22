@@ -57,7 +57,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             throw new ServletException("sub is required");
         }
 
-        User user = userService.getUserByEmail(email).orElse(null);
+        User user = userService.getUserByEmail(email).orElse(null); // getUserBySub() / ProviderId()
 
         PendingOAuthRegistration pendingOAuthRegistration =
                 new PendingOAuthRegistration(provider, sub, email, firstName, lastName);

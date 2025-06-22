@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class AuthServiceImpl implements AuthService {
 
@@ -82,7 +84,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthTokens loginUser(LoginUserDto loginUserDto) {
-
         User user = userRepository
                 .getUserByEmailWithPassword(loginUserDto.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Login credentials are invalid"));
@@ -155,70 +156,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto) {
-        String token = finishOAuthRegistrationDto.token();
-        PendingOAuthRegistration pendingOAuthRegistration;
-        try {
-            pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(token);
-        } catch (ClassCastException e) {
-            throw new InvalidRegistrationTokenException("Invalid registration token type");
-        }
-
-        if (pendingOAuthRegistration == null) {
-            throw new InvalidRegistrationTokenException("Pending OAuth registration not found for given token");
-        }
-        tempUserDataPort.delete(token);
-
-        User user = registerUser(
-                new RegisterUserDto(
-                        pendingOAuthRegistration.email(),
-                        null,
-                        finishOAuthRegistrationDto.username(),
-                        pendingOAuthRegistration.firstName(),
-                        pendingOAuthRegistration.lastName(),
-                        finishOAuthRegistrationDto.birthDate(),
-                        finishOAuthRegistrationDto.sendBudgetReports(),
-                        finishOAuthRegistrationDto.isProfilePublic()
-                )
-        );
-
-        userProviderRepository.save(new UserOAuthProvider(
-                UUID.randomUUID(),
-                pendingOAuthRegistration.provider(),
-                pendingOAuthRegistration.providerId(),
-                user
-        ));
-
-        return generateNewAuthTokens(user);
-    }
-
-    @Override
-    @Transactional
     public AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
-        PendingOAuthRegistration pendingOAuthRegistration;
-        try {
-            pendingOAuthRegistration = (PendingOAuthRegistration) tempUserDataPort.get(linkOAuthAccountDto.linkToken());
-        } catch (ClassCastException e) {
-            throw new InvalidLinkTokenException("Invalid link token type");
-        }
-
-        if (pendingOAuthRegistration == null) {
-            throw new InvalidLinkTokenException("Pending OAuth registration not found for token");
-        }
-        tempUserDataPort.delete(linkOAuthAccountDto.linkToken());
 
         if (linkOAuthAccountDto.shouldLinkAccounts()) {
-            User user = userRepository.getUserByEmailWithPassword(pendingOAuthRegistration.email())
+            User user = userRepository.getUserByEmailWithPassword(linkOAuthAccountDto.email())
                     .orElseThrow(() -> new LinkedUserNotFoundException("Local user to link to not found"));
 
-            if (userProviderRepository.checkIfUserHasProvider(user.getId(), pendingOAuthRegistration.provider())) {
+            if (userProviderRepository.checkIfUserHasProvider(user.getId(), linkOAuthAccountDto.providerName())) {
                 throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
             }
 
             userProviderRepository.save(new UserOAuthProvider(
                     UUID.randomUUID(),
-                    pendingOAuthRegistration.provider(),
-                    pendingOAuthRegistration.providerId(),
+                    linkOAuthAccountDto.providerName(),
+                    linkOAuthAccountDto.providerId(),
                     user
             ));
 
@@ -226,38 +177,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return null;
-    }
-
-    @Override
-    @Transactional
-    public AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto) {
-        PendingLocalRegistration pendingLocalRegistration;
-        try {
-            pendingLocalRegistration = (PendingLocalRegistration) tempUserDataPort.get(linkLocalAccountDto.linkToken());
-        } catch (ClassCastException e) {
-            throw new InvalidLinkTokenException("Invalid link token type");
-        }
-
-        if (pendingLocalRegistration == null) {
-            throw new InvalidLinkTokenException("Pending local account registration not found for given token");
-        }
-        tempUserDataPort.delete(linkLocalAccountDto.linkToken());
-
-        if (!linkLocalAccountDto.shouldLinkAccounts()) {
-            return null;
-        }
-
-        if (userRepository.getUserByEmailWithPassword(pendingLocalRegistration.email()).isPresent()) {
-            throw new UserAlreadyExistsException("User with this email already has a local account");
-        }
-
-        User user = userRepository.getUserByEmailWithoutPassword(pendingLocalRegistration.email())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        user.setPassword(pendingLocalRegistration.hashedPassword());
-        userRepository.save(user);
-
-        return generateNewAuthTokens(user);
     }
 
     @Override
@@ -269,11 +188,53 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void handleGoogleLogin(OAuthCodeDto oAuthCodeDto) {
+    @Transactional
+    public GoogleLoginDTO handleGoogleLogin(OAuthCodeDto oAuthCodeDto) {
         Map<String, String> tokenResponse = oAuth2CodeService.exchangeCodeForTokens(oAuthCodeDto.code(), oAuthCodeDto.codeVerifier());
-        String dataJwtToken = tokenResponse.get("id_token");
-    }
+        GoogleUserDto googleUserDto = oAuth2CodeService.extractUserInfoFromIdToken(tokenResponse.get("id_token"));
 
+        int randomNumber = ThreadLocalRandom.current().nextInt(1000, 999999);
+        String username = googleUserDto.firstName().toLowerCase() + googleUserDto.lastName().toLowerCase() + randomNumber;
+
+        Optional<User> user = userRepository.getUserByEmail(googleUserDto.email());
+
+        if (user.isPresent()) {
+            AuthTokens authTokens = issueJwtTokens(user.get());
+            return new GoogleLoginDTO(
+                    false,
+                    authTokens.accessToken(),
+                    authTokens.refreshToken(),
+                    googleUserDto.sub(),
+                    "google",
+                    user.get().getEmail()
+            );
+        } else {
+            User newGoogleUser = new User(
+                    UUID.randomUUID(),
+                    googleUserDto.email(),
+                    null,
+                    username,
+                    googleUserDto.firstName(),
+                    googleUserDto.lastName(),
+                    null,
+                    false,
+                    false
+            );
+            User createdGoogleUser = userRepository.save(newGoogleUser);
+
+            AuthTokens authTokens = issueJwtTokens(createdGoogleUser);
+
+            return new GoogleLoginDTO(
+                    true,
+                    authTokens.accessToken(),
+                    authTokens.refreshToken(),
+                    null,
+                    null,
+                    null //todo: to verification
+            );
+        }
+
+    }
 
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {
