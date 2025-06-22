@@ -131,4 +131,10 @@ public class AuthController {
         }
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/oauth2/code/google")
+    public ResponseEntity<String> handleGoogleCode(@RequestBody OAuthCodeRequest request) {
+        authService.handleGoogleLogin(new OAuthCodeDto(request.code(), request.codeVerifier()));
+        return ResponseEntity.ok().build();
+    }
 }

@@ -2,6 +2,7 @@ package com.drapson.springauthtutorial.application;
 
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
+import org.springframework.http.ResponseEntity;
 
 public interface AuthService {
     User registerUser(RegisterUserDto registerUserDto);
@@ -23,4 +24,6 @@ public interface AuthService {
     AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto);
 
     String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
+
+    void handleGoogleLogin(OAuthCodeDto oAuthCodeDto);
 }

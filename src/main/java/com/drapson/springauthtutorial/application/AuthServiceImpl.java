@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 public class AuthServiceImpl implements AuthService {
@@ -20,19 +21,29 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
+    private final OAuth2CodeService oAuth2CodeService;
 
     @Value("${spring.tokens.other.temp_access_expiration}")
     private long tempTokenExpirationTime;
     @Value("${spring.tokens.other.refresh_expiration}")
     private long refTokenExpirationTime;
 
-    public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, UserProviderRepository userProviderRepository, BCryptPasswordEncoder passwordEncoder, TokenProvider tokenProvider, TempUserDataPort tempUserDataPort) {
+    public AuthServiceImpl(
+            UserRepository userRepository,
+            RefreshTokenRepository refreshTokenRepository,
+            UserProviderRepository userProviderRepository,
+            BCryptPasswordEncoder passwordEncoder,
+            TokenProvider tokenProvider,
+            TempUserDataPort tempUserDataPort,
+            OAuth2CodeService oAuth2CodeService
+    ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userProviderRepository = userProviderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.tempUserDataPort = tempUserDataPort;
+        this.oAuth2CodeService = oAuth2CodeService;
     }
 
     @Override
@@ -256,6 +267,13 @@ public class AuthServiceImpl implements AuthService {
 
         return tempRegistrationToken;
     }
+
+    @Override
+    public void handleGoogleLogin(OAuthCodeDto oAuthCodeDto) {
+        Map<String, String> tokenResponse = oAuth2CodeService.exchangeCodeForTokens(oAuthCodeDto.code(), oAuthCodeDto.codeVerifier());
+        String dataJwtToken = tokenResponse.get("id_token");
+    }
+
 
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {

@@ -1,11 +1,14 @@
 package com.drapson.springauthtutorial.config;
 
+import com.drapson.springauthtutorial.adapters.in.security.OAuth2CodeServiceImpl;
 import com.drapson.springauthtutorial.application.*;
 import com.drapson.springauthtutorial.domain.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class ServiceConfiguration {
@@ -22,9 +25,27 @@ public class ServiceConfiguration {
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort
+            TempUserDataPort tempUserDataPort,
+            OAuth2CodeService oAuth2CodeService
     ) {
-        return new AuthServiceImpl(userRepository, refreshTokenRepository, userProviderRepository, passwordEncoder, tokenProvider, tempUserDataPort);
+        return new AuthServiceImpl(
+                userRepository,
+                refreshTokenRepository,
+                userProviderRepository,
+                passwordEncoder,
+                tokenProvider,
+                tempUserDataPort,
+                oAuth2CodeService
+        );
+    }
+
+    @Bean
+    public OAuth2CodeService oAuth2CodeService(
+            WebClient webClient,
+            @Value("${spring.security.oauth2.client.registration.google.client-id}") String googleClientId,
+            @Value("${spring.security.oauth2.client.registration.google.client-secret}") String googleClientSecret
+    ) {
+        return new OAuth2CodeServiceImpl(webClient, googleClientId, googleClientSecret);
     }
 
 }

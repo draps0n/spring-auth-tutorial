@@ -45,6 +45,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'commons-codec:commons-codec:1.16.0'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'

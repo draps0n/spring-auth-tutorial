@@ -19,22 +19,32 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
+import java.io.IOException;
+
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
     private final AuthService authService;
     private final CookieUtil cookieUtil;
     private final ObjectMapper objectMapper;
+    private final String frontendCallbackURL;
 
-    public CustomOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper) {
+    public CustomOAuth2SuccessHandler(
+            UserService userService,
+            AuthService authService,
+            CookieUtil cookieUtil,
+            ObjectMapper objectMapper,
+            String frontendCallbackURL
+    ) {
         this.userService = userService;
         this.authService = authService;
         this.cookieUtil = cookieUtil;
         this.objectMapper = objectMapper;
+        this.frontendCallbackURL = frontendCallbackURL;
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws ServletException, IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         String provider = oauthToken.getAuthorizedClientRegistrationId();
@@ -64,38 +74,16 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         }
     }
 
-    private void processOAuth2Registration(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) {
-        ErrorCode errorCode = ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED;
+    private void processOAuth2Registration(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
         String registrationToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-        ProblemDetailDto problem = errorCode.getProblemDetail();
-        problem.setDetail("To register, please provide additional information");
-        problem.setProperty("registrationToken", registrationToken);
-
-        try {
-            String json = objectMapper.writeValueAsString(problem);
-            response.setStatus(errorCode.getStatus().value());
-            response.setContentType("application/problem+json");
-            response.getWriter().write(json);
-        } catch (Exception e) {
-            throw new RuntimeException("Error writing response: ", e);
-        }
+        String redirectUrl = String.format("%s?status=registration_required&registrationToken=%s", frontendCallbackURL, registrationToken);
+        response.sendRedirect(redirectUrl);
     }
 
-    private void processPossibleOAuth2AccountLinking(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) {
-        ErrorCode errorCode = ErrorCode.EMAIL_USED_BY_DIFFERENT_PROVIDER;
+    private void processPossibleOAuth2AccountLinking(HttpServletResponse response, PendingOAuthRegistration pendingOAuthRegistration) throws IOException {
         String linkToken = authService.issueTemporaryRegistrationToken(pendingOAuthRegistration);
-        ProblemDetailDto problem = errorCode.getProblemDetail();
-        problem.setDetail("Account linking needed. Please link your account with the existing user.");
-        problem.setProperty("linkToken", linkToken);
-
-        try {
-            String json = objectMapper.writeValueAsString(problem);
-            response.setStatus(errorCode.getStatus().value());
-            response.setContentType("application/problem+json");
-            response.getWriter().write(json);
-        } catch (Exception e) {
-            throw new RuntimeException("Error writing response: ", e);
-        }
+        String redirectUrl = String.format("%s?status=linking_required&linkToken=%s", frontendCallbackURL, linkToken);
+        response.sendRedirect(redirectUrl);
     }
 
     private void processStandardOAuth2SignIn(HttpServletResponse response, User user) {

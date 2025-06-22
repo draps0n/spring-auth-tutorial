@@ -59,7 +59,7 @@ springdoc:
     path: /v3/api-docs
 
 app:
-  front-url: http://localhost:5342
+  front-url: http://localhost:4200
 
 server:
   port: 8080

@@ -12,6 +12,7 @@ import com.drapson.springauthtutorial.application.TokenProvider;
 import com.drapson.springauthtutorial.application.UserService;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -33,6 +34,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -58,7 +60,7 @@ public class SecurityConfiguration {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
 //                .httpBasic(Customizer.withDefaults())
-                .oauth2Login(oauth2 -> oauth2.successHandler(customOAuth2SuccessHandler))
+//                .oauth2Login(oauth2 -> oauth2.successHandler(customOAuth2SuccessHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .build();
     }
@@ -69,8 +71,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper) {
-        return new CustomOAuth2SuccessHandler(userService, authService, cookieUtil, objectMapper);
+    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper, @Value("${app.front-url}") String frontendCallbackURL) {
+        return new CustomOAuth2SuccessHandler(userService, authService, cookieUtil, objectMapper, frontendCallbackURL);
     }
 
     @Bean
@@ -126,4 +128,8 @@ public class SecurityConfiguration {
         return new JwtAuthenticationEntryPoint(objectMapper);
     }
 
+    @Bean
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.build();
+    }
 }
