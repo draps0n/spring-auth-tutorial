@@ -63,6 +63,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation "io.netty:netty-resolver-dns-native-macos:4.1.89.Final:osx-aarch_64"
+
 }
 
 tasks.named('test') {
