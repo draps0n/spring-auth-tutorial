@@ -82,47 +82,18 @@ public class AuthController {
         return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
 
-    @PostMapping("/finish-oauth-registration")
-    public ResponseEntity<AccessTokenResponse> finishOAuthRegistration(@RequestBody @Valid AdditionalRegistrationInfoRequest additionalRegistrationInfoRequest,
-                                                                       HttpServletResponse response) {
-        AuthTokens authTokens = authService.finishOAuthRegistration(new FinishOAuthRegistrationDto(
-                additionalRegistrationInfoRequest.token(),
-                additionalRegistrationInfoRequest.username(),
-                additionalRegistrationInfoRequest.birthDate(),
-                additionalRegistrationInfoRequest.sendBudgetReports(),
-                additionalRegistrationInfoRequest.isProfilePublic()
-        ));
-
-        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-        response.addCookie(refreshTokenCookie);
-
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-    }
-
     @PostMapping("/link-oauth")
     public ResponseEntity<AccessTokenResponse> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
                                                                  HttpServletResponse response) {
         AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
                 linkOAuthAccountRequest.linkToken(),
-                linkOAuthAccountRequest.shouldLinkAccounts()
+                linkOAuthAccountRequest.shouldLinkAccounts(),
+                linkOAuthAccountRequest.providerId(),
+                linkOAuthAccountRequest.providerName(),
+                linkOAuthAccountRequest.email()
+
         ));
 
-        if (authTokens != null) {
-            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            response.addCookie(refreshTokenCookie);
-
-            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-        }
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/link-local")
-    public ResponseEntity<AccessTokenResponse> linkLocalAccount(@RequestBody @Valid LinkLocalAccountRequest linkLocalAccountRequest,
-                                                                HttpServletResponse response) {
-        AuthTokens authTokens = authService.linkNewLocalAccount(new LinkLocalAccountDto(
-                linkLocalAccountRequest.linkToken(),
-                linkLocalAccountRequest.shouldLinkAccounts()
-        ));
         if (authTokens != null) {
             Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
             response.addCookie(refreshTokenCookie);

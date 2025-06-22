@@ -7,6 +7,16 @@ public record LinkOAuthAccountRequest(
         String linkToken,
 
         @NotNull
-        boolean shouldLinkAccounts
+        boolean shouldLinkAccounts,
+
+        @NotNull
+        String providerId,
+
+        @NotNull
+        String providerName,
+
+        @NotNull
+        String email
+
 ) {
 }
