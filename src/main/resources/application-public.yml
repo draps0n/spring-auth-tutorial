@@ -29,6 +29,11 @@ spring:
     jwt:
       secret: ${JWT_SECRET_KEY}
       access_expiration: 7200 # in seconds
+    cookie:
+      refresh-token:
+        expires-in: 604800
+      access-token:
+        expires-in: 7200
     other:
       refresh_expiration: 604800
       temp_access_expiration: 600
@@ -63,4 +68,10 @@ app:
   front-url: http://localhost:4200
 
 server:
-  port: 8080
+  port: 8080 # 8443 for https
+  ssl:
+    enabled: false # if true, then uncomment section below -> +bash command to generate keystore.p12
+#    key-store: classpath:keystore.p12
+#    key-store-password: password123
+#    key-store-type: PKCS12
+#    key-alias: springboot

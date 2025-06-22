@@ -2,6 +2,7 @@ package com.drapson.springauthtutorial.adapters.in.api;
 
 import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
+import com.drapson.springauthtutorial.adapters.in.api.response.GoogleAuthResponse;
 import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AccessTokenResponse> registerUser(@RequestBody @Valid RegisterUserRequest request,
+    public ResponseEntity<Void> registerUser(@RequestBody @Valid RegisterUserRequest request,
                                                             HttpServletResponse response) {
         User user = authService.registerUser(
                 new RegisterUserDto(
@@ -45,9 +47,12 @@ public class AuthController {
         AuthTokens authTokens = authService.issueJwtTokens(user);
 
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-        response.addCookie(refreshTokenCookie);
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
 
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+        response.addCookie(refreshTokenCookie);
+        response.addCookie(accessTokenCookie);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
@@ -59,8 +64,12 @@ public class AuthController {
                         request.password()
                 )
         );
+
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
+
         response.addCookie(refreshTokenCookie);
+        response.addCookie(accessTokenCookie);
 
         return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
@@ -68,22 +77,25 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response) {
         authService.logoutUser(refreshToken);
-        response.addCookie(cookieUtil.invalidateCookie());
+        response.addCookie(cookieUtil.invalidateRefreshTokenCookie());
 
         return ResponseEntity.ok().build();
     }
 
     @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
-    public ResponseEntity<AccessTokenResponse> refreshTokens(
-            @CookieValue(name = "REFRESH-TOKEN") String refreshToken) {
+    public ResponseEntity<Void> refreshTokens(
+            @CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response) {
         AuthTokens authTokens = authService.refreshAccessToken(refreshToken);
 
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
+        response.addCookie(accessTokenCookie);
+
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/link-oauth")
-    public ResponseEntity<AccessTokenResponse> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
+    public ResponseEntity<Void> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
                                                                  HttpServletResponse response) {
         AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
                 linkOAuthAccountRequest.linkToken(),
@@ -96,16 +108,32 @@ public class AuthController {
 
         if (authTokens != null) {
             Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            response.addCookie(refreshTokenCookie);
+            Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
 
-            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+            response.addCookie(refreshTokenCookie);
+            response.addCookie(accessTokenCookie);
+
+            return ResponseEntity.ok().build();
         }
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/oauth2/code/google")
-    public ResponseEntity<String> handleGoogleCode(@RequestBody OAuthCodeRequest request) {
-        authService.handleGoogleLogin(new OAuthCodeDto(request.code(), request.codeVerifier()));
-        return ResponseEntity.ok().build();
+    public ResponseEntity<GoogleAuthResponse> handleGoogleCode(@RequestBody OAuthCodeRequest request,
+                                                               HttpServletResponse response) {
+        GoogleLoginDTO googleLoginDTO = authService.handleGoogleLogin(new OAuthCodeDto(request.code(), request.codeVerifier()));
+
+        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(googleLoginDTO.refreshToken());
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(googleLoginDTO.accessToken());
+
+        response.addCookie(refreshTokenCookie);
+        response.addCookie(accessTokenCookie);
+
+        return ResponseEntity.ok().body(new GoogleAuthResponse(
+                googleLoginDTO.isNewUser(),
+                googleLoginDTO.providerId(),
+                googleLoginDTO.providerName(),
+                googleLoginDTO.email()
+        ));
     }
 }
