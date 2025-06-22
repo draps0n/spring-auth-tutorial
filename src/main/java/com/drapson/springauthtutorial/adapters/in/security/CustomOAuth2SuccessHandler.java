@@ -1,11 +1,15 @@
 package com.drapson.springauthtutorial.adapters.in.security;
 
+import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
+import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.UserService;
 import com.drapson.springauthtutorial.application.dtos.AuthTokens;
 import com.drapson.springauthtutorial.application.dtos.PendingOAuthRegistration;
 import com.drapson.springauthtutorial.domain.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -13,20 +17,18 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.util.UUID;
-
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
     private final AuthService authService;
-    private final String frontUrl;
+    private final CookieUtil cookieUtil;
+    private final ObjectMapper objectMapper;
 
-    public CustomOAuth2SuccessHandler(UserService userService, AuthService authService, String frontUrl) {
+    public CustomOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper) {
         this.userService = userService;
         this.authService = authService;
-        this.frontUrl = frontUrl;
+        this.cookieUtil = cookieUtil;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -63,8 +65,17 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         } else {
             // User found and provider is linked, issue JWT tokens
             AuthTokens authTokens = authService.issueJwtTokens(user);
+            AccessTokenResponse accessTokenResponse = new AccessTokenResponse(authTokens.accessToken());
+            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+            response.addCookie(refreshTokenCookie);
+            response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/json");
-            // TODO: issue cookies
+            try {
+                String json = objectMapper.writeValueAsString(accessTokenResponse);
+                response.getWriter().write(json);
+            } catch (Exception e) {
+                throw new RuntimeException("Error writing response: ", e);
+            }
         }
     }
 

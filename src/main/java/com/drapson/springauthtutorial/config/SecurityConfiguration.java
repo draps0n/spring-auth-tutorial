@@ -1,5 +1,6 @@
 package com.drapson.springauthtutorial.config;
 
+import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.adapters.in.security.CustomOAuth2SuccessHandler;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationEntryPoint;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationFilter;
@@ -11,7 +12,6 @@ import com.drapson.springauthtutorial.application.TokenProvider;
 import com.drapson.springauthtutorial.application.UserService;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -64,8 +64,8 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, @Value("${app.front-url}") String frontUrl) {
-        return new CustomOAuth2SuccessHandler(userService, authService, frontUrl);
+    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper) {
+        return new CustomOAuth2SuccessHandler(userService, authService, cookieUtil, objectMapper);
     }
 
     @Bean
