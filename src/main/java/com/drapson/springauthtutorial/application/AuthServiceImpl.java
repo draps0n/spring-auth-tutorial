@@ -7,7 +7,6 @@ import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -102,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthTokens refreshTokens(String refreshToken) {
+    public AuthTokens refreshAccessToken(String refreshToken) {
         String hashedRefreshToken = tokenProvider.hashToken(refreshToken);
         RefreshToken existingRefreshToken = refreshTokenRepository
                 .getRefreshTokenByHashedToken(hashedRefreshToken)
@@ -118,7 +117,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = existingRefreshToken.user();
 
-        return generateNewAuthTokens(user, existingRefreshToken.id());
+        return new AuthTokens(
+                generateAccessToken(user),
+                refreshToken
+        );
     }
 
     @Override
@@ -257,11 +259,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     protected AuthTokens generateNewAuthTokens(User user) {
-        return generateNewAuthTokens(user, null);
-    }
-
-    @Transactional
-    protected AuthTokens generateNewAuthTokens(User user, UUID toRevokeRefreshTokenId) {
         String accessToken = tokenProvider.generateToken(user.getId(), user.getEmail());
         String rawRefreshToken = tokenProvider.generateRefreshToken();
         String hashedRefreshToken = tokenProvider.hashToken(rawRefreshToken);
@@ -274,13 +271,13 @@ public class AuthServiceImpl implements AuthService {
                 false
         );
 
-        if (toRevokeRefreshTokenId != null) {
-            refreshTokenRepository.updateRevokedStatus(toRevokeRefreshTokenId, true);
-        }
-
         refreshTokenRepository.save(refreshToken);
 
         return new AuthTokens(accessToken, rawRefreshToken);
+    }
+
+    private String generateAccessToken(User user) {
+        return tokenProvider.generateToken(user.getId(), user.getEmail());
     }
 }
 

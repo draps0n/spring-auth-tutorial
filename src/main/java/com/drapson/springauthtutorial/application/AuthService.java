@@ -10,7 +10,7 @@ public interface AuthService {
 
     void logoutUser(String token);
 
-    AuthTokens refreshTokens(String refreshToken);
+    AuthTokens refreshAccessToken(String refreshToken);
 
     AuthTokens issueJwtTokens(User user);
 
