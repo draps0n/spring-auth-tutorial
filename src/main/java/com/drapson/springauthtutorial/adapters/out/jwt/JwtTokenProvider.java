@@ -1,6 +1,6 @@
 package com.drapson.springauthtutorial.adapters.out.jwt;
 
-import com.drapson.springauthtutorial.application.TokenProvider;
+import com.drapson.springauthtutorial.application.out.TokenProvider;
 import com.drapson.springauthtutorial.application.exceptions.AccessTokenExpiredException;
 import com.drapson.springauthtutorial.application.exceptions.EmptyAccessTokenException;
 import com.drapson.springauthtutorial.application.exceptions.InvalidAccessTokenException;

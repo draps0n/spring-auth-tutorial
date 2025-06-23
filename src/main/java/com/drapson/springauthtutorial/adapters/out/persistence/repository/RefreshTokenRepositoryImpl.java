@@ -2,7 +2,7 @@ package com.drapson.springauthtutorial.adapters.out.persistence.repository;
 
 import com.drapson.springauthtutorial.adapters.out.persistence.entity.RefreshTokenEntity;
 import com.drapson.springauthtutorial.adapters.out.persistence.mapper.RefreshTokenMapper;
-import com.drapson.springauthtutorial.application.RefreshTokenRepository;
+import com.drapson.springauthtutorial.application.out.RefreshTokenRepository;
 import com.drapson.springauthtutorial.application.dtos.RefreshToken;
 import org.springframework.stereotype.Repository;
 

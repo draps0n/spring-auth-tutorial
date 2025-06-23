@@ -3,6 +3,8 @@ package com.drapson.springauthtutorial.application;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.LinkedUserNotFoundException;
 import com.drapson.springauthtutorial.application.exceptions.UserAlreadyLinkedToProviderException;
+import com.drapson.springauthtutorial.application.out.OAuth2CodeService;
+import com.drapson.springauthtutorial.application.out.UserProviderRepository;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.transaction.annotation.Transactional;

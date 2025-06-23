@@ -1,4 +1,4 @@
-package com.drapson.springauthtutorial.application;
+package com.drapson.springauthtutorial.application.out;
 
 import com.drapson.springauthtutorial.application.dtos.RefreshToken;
 

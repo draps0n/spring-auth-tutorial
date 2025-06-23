@@ -1,24 +1,12 @@
 package com.drapson.springauthtutorial.config;
 
-import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
-import com.drapson.springauthtutorial.adapters.in.security.CustomOAuth2SuccessHandler;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationEntryPoint;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationFilter;
-import com.drapson.springauthtutorial.adapters.in.security.UserDetailsServiceImpl;
-import com.drapson.springauthtutorial.adapters.out.redis.RedisTempUserDataAdapter;
-import com.drapson.springauthtutorial.application.AuthService;
-import com.drapson.springauthtutorial.application.TempUserDataPort;
-import com.drapson.springauthtutorial.application.TokenProvider;
-import com.drapson.springauthtutorial.application.UserService;
-import com.drapson.springauthtutorial.domain.UserRepository;
+import com.drapson.springauthtutorial.application.out.TokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
-import org.springframework.lang.NonNullApi;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -35,8 +23,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
@@ -44,7 +30,7 @@ import java.util.List;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, CustomOAuth2SuccessHandler customOAuth2SuccessHandler, AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -59,20 +45,8 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
-//                .httpBasic(Customizer.withDefaults())
-//                .oauth2Login(oauth2 -> oauth2.successHandler(customOAuth2SuccessHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .build();
-    }
-
-    @Bean
-    public TempUserDataPort tempUserDataPort(RedisTemplate<String, Object> redisTemplate) {
-        return new RedisTempUserDataAdapter(redisTemplate);
-    }
-
-    @Bean
-    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, CookieUtil cookieUtil, ObjectMapper objectMapper, @Value("${app.front-url}") String frontendCallbackURL) {
-        return new CustomOAuth2SuccessHandler(userService, authService, cookieUtil, objectMapper, frontendCallbackURL);
     }
 
     @Bean
@@ -89,11 +63,6 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return new UserDetailsServiceImpl(userRepository);
-    }
-
-    @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
@@ -101,13 +70,6 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
-    }
-
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        return template;
     }
 
     @Bean

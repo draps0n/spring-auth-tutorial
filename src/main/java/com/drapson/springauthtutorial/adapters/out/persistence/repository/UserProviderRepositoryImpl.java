@@ -1,8 +1,7 @@
 package com.drapson.springauthtutorial.adapters.out.persistence.repository;
 
-import com.drapson.springauthtutorial.adapters.out.persistence.entity.UserOAuthProviderEntity;
 import com.drapson.springauthtutorial.adapters.out.persistence.mapper.UserOAuthProviderMapper;
-import com.drapson.springauthtutorial.application.UserProviderRepository;
+import com.drapson.springauthtutorial.application.out.UserProviderRepository;
 import com.drapson.springauthtutorial.application.dtos.UserOAuthProvider;
 import org.springframework.stereotype.Repository;
 

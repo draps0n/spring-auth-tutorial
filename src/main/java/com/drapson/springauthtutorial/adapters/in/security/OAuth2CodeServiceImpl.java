@@ -2,7 +2,7 @@ package com.drapson.springauthtutorial.adapters.in.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.drapson.springauthtutorial.application.OAuth2CodeService;
+import com.drapson.springauthtutorial.application.out.OAuth2CodeService;
 import com.drapson.springauthtutorial.application.dtos.GoogleUserDto;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;

@@ -2,13 +2,15 @@ package com.drapson.springauthtutorial.application;
 
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.*;
+import com.drapson.springauthtutorial.application.out.RefreshTokenRepository;
+import com.drapson.springauthtutorial.application.out.TokenProvider;
+import com.drapson.springauthtutorial.application.out.UserProviderRepository;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -19,10 +21,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserProviderRepository userProviderRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
-    private final TempUserDataPort tempUserDataPort;
 
-    @Value("${spring.tokens.other.temp_access_expiration}")
-    private long tempTokenExpirationTime;
     @Value("${spring.tokens.other.refresh_expiration}")
     private long refTokenExpirationTime;
 
@@ -31,33 +30,20 @@ public class AuthServiceImpl implements AuthService {
             RefreshTokenRepository refreshTokenRepository,
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
-            TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort
+            TokenProvider tokenProvider
     ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.userProviderRepository = userProviderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
-        this.tempUserDataPort = tempUserDataPort;
     }
 
     @Override
     @Transactional
     public User registerUser(RegisterUserDto registerUserDto) {
-        if (userRepository.getUserByEmailWithoutPassword(registerUserDto.email()).isPresent()) {
-            PendingLocalRegistration pendingLocalRegistration = new PendingLocalRegistration(
-                    registerUserDto.email(),
-                    passwordEncoder.encode(registerUserDto.password())
-            );
-            String linkToken = UUID.randomUUID().toString();
-            tempUserDataPort.save(linkToken, pendingLocalRegistration, Duration.ofSeconds(tempTokenExpirationTime));
-
-            throw new EmailLinkedThroughProviderException("User with this email is linked through a provider", linkToken);
-        }
-
-        if (userRepository.getUserByEmailWithPassword(registerUserDto.email()).isPresent()) {
-            throw new UserAlreadyExistsException("User with this email already has a local account");
+        if (userRepository.getUserByEmail(registerUserDto.email()).isPresent()) {
+            throw new UserAlreadyExistsException("This email address is already taken");
         }
 
         User user = new User(
@@ -137,23 +123,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return generateNewAuthTokens(user);
-    }
-
-    @Override
-    public boolean checkIfUserHasProvider(User user, String provider) {
-        if (user == null) {
-            throw new UserNotFoundException("User not found");
-        }
-
-        return userProviderRepository.checkIfUserHasProvider(user.getId(), provider);
-    }
-
-    @Override
-    public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
-        String tempRegistrationToken = UUID.randomUUID().toString();
-        tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
-
-        return tempRegistrationToken;
     }
 
     @Transactional

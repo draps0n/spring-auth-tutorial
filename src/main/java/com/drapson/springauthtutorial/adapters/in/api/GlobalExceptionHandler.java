@@ -1,7 +1,5 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
-import com.drapson.springauthtutorial.adapters.in.security.AdditionalRegistrationInfoNeededException;
-import com.drapson.springauthtutorial.adapters.in.security.EmailLinkedToAnotherAccountWithDifferentProviderException;
 import com.drapson.springauthtutorial.application.exceptions.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,20 +27,6 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleEmailLinked(EmailLinkedThroughProviderException ex) {
         ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_PROVIDER, ex.getMessage());
         problem.setProperty("linkToken", ex.getLinkToken());
-        return problem;
-    }
-
-    @ExceptionHandler(EmailLinkedToAnotherAccountWithDifferentProviderException.class)
-    public ProblemDetail handleEmailLinkedLocal(EmailLinkedToAnotherAccountWithDifferentProviderException ex) {
-        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_USED_BY_DIFFERENT_PROVIDER, ex.getMessage());
-        problem.setProperty("linkToken", ex.getLinkToken());
-        return problem;
-    }
-
-    @ExceptionHandler(AdditionalRegistrationInfoNeededException.class)
-    public ProblemDetail handleAdditionalRegistrationInfoNeeded(AdditionalRegistrationInfoNeededException ex) {
-        ProblemDetail problem = formatErrorResponse(ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED, ex.getMessage());
-        problem.setProperty("registrationToken", ex.getRegistrationToken());
         return problem;
     }
 

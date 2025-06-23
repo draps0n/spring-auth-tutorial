@@ -15,8 +15,4 @@ public interface AuthService {
     AuthTokens refreshAccessToken(String refreshToken);
 
     AuthTokens issueJwtTokens(User user);
-
-    boolean checkIfUserHasProvider(User user, String provider);
-
-    String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
 }
