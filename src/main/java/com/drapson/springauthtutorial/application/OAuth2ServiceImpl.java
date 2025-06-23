@@ -107,6 +107,13 @@ public class OAuth2ServiceImpl implements OAuth2Service {
             );
             User createdGoogleUser = userRepository.save(newGoogleUser);
 
+            userProviderRepository.save(new UserOAuthProvider(
+                    UUID.randomUUID(),
+                    "google",
+                    googleUserDto.sub(),
+                    createdGoogleUser
+            ));
+
             AuthTokens authTokens = authService.issueJwtTokens(createdGoogleUser);
 
             return new GoogleLoginDTO(
