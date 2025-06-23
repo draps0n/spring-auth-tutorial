@@ -6,6 +6,7 @@ import com.drapson.springauthtutorial.application.UserProviderRepository;
 import com.drapson.springauthtutorial.application.dtos.UserOAuthProvider;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -25,5 +26,12 @@ public class UserProviderRepositoryImpl implements UserProviderRepository {
     @Override
     public void save(UserOAuthProvider userOAuthProvider) {
         jpaUserProviderRepository.save(UserOAuthProviderMapper.toEntity(userOAuthProvider));
+    }
+
+    @Override
+    public Optional<UserOAuthProvider> getOAuthUserByProviderAndProviderId(String providerName, String providerId) {
+        return jpaUserProviderRepository
+                .findByProviderAndProviderId(providerName, providerId)
+                .map(UserOAuthProviderMapper::toDomain);
     }
 }

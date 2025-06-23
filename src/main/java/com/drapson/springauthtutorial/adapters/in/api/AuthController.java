@@ -2,7 +2,7 @@ package com.drapson.springauthtutorial.adapters.in.api;
 
 import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
-import com.drapson.springauthtutorial.adapters.in.api.response.GoogleAuthResponse;
+import com.drapson.springauthtutorial.adapters.in.api.response.OAuth2LinkResponse;
 import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
@@ -31,7 +31,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Void> registerUser(@RequestBody @Valid RegisterUserRequest request,
-                                                            HttpServletResponse response) {
+                                             HttpServletResponse response) {
         User user = authService.registerUser(
                 new RegisterUserDto(
                         request.email(),
@@ -98,7 +98,7 @@ public class AuthController {
 
     @PostMapping("/link-oauth")
     public ResponseEntity<Void> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
-                                                                 HttpServletResponse response) {
+                                                  HttpServletResponse response) {
         AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
                 linkOAuthAccountRequest.linkToken(),
                 linkOAuthAccountRequest.shouldLinkAccounts(),
@@ -121,21 +121,30 @@ public class AuthController {
     }
 
     @PostMapping("/oauth2/code/google")
-    public ResponseEntity<GoogleAuthResponse> handleGoogleCode(@RequestBody OAuthCodeRequest request,
-                                                               HttpServletResponse response) {
-        GoogleLoginDTO googleLoginDTO = authService.handleGoogleLogin(new OAuthCodeDto(request.code(), request.codeVerifier()));
+    public ResponseEntity<?> handleGoogleCode(@RequestBody OAuthCodeRequest request,
+                                              HttpServletResponse response) {
+        GoogleLoginDTO googleLoginDTO = authService
+                .handleGoogleLogin(new OAuthCodeDto(request.code(), request.codeVerifier()));
 
-        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(googleLoginDTO.refreshToken());
-        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(googleLoginDTO.accessToken());
+        return switch (googleLoginDTO.getLoginType()) {
+            case NEW_USER, EXISTING_USER -> {
+                Cookie refreshTokenCookie = cookieUtil
+                        .createRefreshTokenCookie(googleLoginDTO.getRefreshToken());
 
-        response.addCookie(refreshTokenCookie);
-        response.addCookie(accessTokenCookie);
+                Cookie accessTokenCookie = cookieUtil
+                        .createAccessTokenCookie(googleLoginDTO.getAccessToken());
 
-        return ResponseEntity.ok().body(new GoogleAuthResponse(
-                googleLoginDTO.isNewUser(),
-                googleLoginDTO.providerId(),
-                googleLoginDTO.providerName(),
-                googleLoginDTO.email()
-        ));
+                response.addCookie(refreshTokenCookie);
+                response.addCookie(accessTokenCookie);
+
+                yield ResponseEntity.ok().build();
+            }
+            case POSSIBLE_LINK -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new OAuth2LinkResponse(
+                            googleLoginDTO.getProviderName(),
+                            googleLoginDTO.getProviderId(),
+                            googleLoginDTO.getUserId()
+                    ));
+        };
     }
 }

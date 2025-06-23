@@ -4,8 +4,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.drapson.springauthtutorial.application.OAuth2CodeService;
 import com.drapson.springauthtutorial.application.dtos.GoogleUserDto;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
@@ -13,7 +11,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
 import java.util.Map;
 
 public class OAuth2CodeServiceImpl implements OAuth2CodeService {
@@ -35,7 +32,7 @@ public class OAuth2CodeServiceImpl implements OAuth2CodeService {
         formData.add("code", code);
         formData.add("client_id", googleClientId);
         formData.add("client_secret", googleClientSecret);
-        formData.add("redirect_uri", "http://localhost:4200/oauth/callback");
+        formData.add("redirect_uri", "http://localhost:4200/oauth2/callback");
         formData.add("code_verifier", codeVerifier);
 
         return webClient.post()

@@ -193,22 +193,37 @@ public class AuthServiceImpl implements AuthService {
         Map<String, String> tokenResponse = oAuth2CodeService.exchangeCodeForTokens(oAuthCodeDto.code(), oAuthCodeDto.codeVerifier());
         GoogleUserDto googleUserDto = oAuth2CodeService.extractUserInfoFromIdToken(tokenResponse.get("id_token"));
 
-        int randomNumber = ThreadLocalRandom.current().nextInt(1000, 999999);
-        String username = googleUserDto.firstName().toLowerCase() + googleUserDto.lastName().toLowerCase() + randomNumber;
+        Optional<UserOAuthProvider> existingOAuthUser = userProviderRepository
+                .getOAuthUserByProviderAndProviderId("google", googleUserDto.sub());
+
+        if (existingOAuthUser.isPresent()) {
+            // User already exists with this Google provider ID
+            User user = existingOAuthUser.get().user();
+            AuthTokens authTokens = issueJwtTokens(user);
+            return new GoogleLoginDTO(
+                    GoogleLoginDTO.LoginType.EXISTING_USER,
+                    authTokens.accessToken(),
+                    authTokens.refreshToken()
+            );
+        }
 
         Optional<User> user = userRepository.getUserByEmail(googleUserDto.email());
 
         if (user.isPresent()) {
-            AuthTokens authTokens = issueJwtTokens(user.get());
+            // User exists, but not linked to Google
+            User existingUser = user.get();
             return new GoogleLoginDTO(
-                    false,
-                    authTokens.accessToken(),
-                    authTokens.refreshToken(),
-                    googleUserDto.sub(),
+                    GoogleLoginDTO.LoginType.POSSIBLE_LINK,
                     "google",
-                    user.get().getEmail()
+                    googleUserDto.sub(),
+                    existingUser.getId()
             );
         } else {
+            // User does not exist, create a new OAuth user
+            String username = googleUserDto.firstName().substring(0, 3).toLowerCase() + "_" +
+                    googleUserDto.lastName().substring(0, 3).toLowerCase() + "_" +
+                    ThreadLocalRandom.current().nextInt(1000, 9999);
+
             User newGoogleUser = new User(
                     UUID.randomUUID(),
                     googleUserDto.email(),
@@ -216,21 +231,18 @@ public class AuthServiceImpl implements AuthService {
                     username,
                     googleUserDto.firstName(),
                     googleUserDto.lastName(),
-                    null,
-                    false,
-                    false
+                    null, // No birthdate provided
+                    false, // Default to not sending budget reports
+                    false // Default to private profile
             );
             User createdGoogleUser = userRepository.save(newGoogleUser);
 
             AuthTokens authTokens = issueJwtTokens(createdGoogleUser);
 
             return new GoogleLoginDTO(
-                    true,
+                    GoogleLoginDTO.LoginType.NEW_USER,
                     authTokens.accessToken(),
-                    authTokens.refreshToken(),
-                    null,
-                    null,
-                    null //todo: to verification
+                    authTokens.refreshToken()
             );
         }
 
