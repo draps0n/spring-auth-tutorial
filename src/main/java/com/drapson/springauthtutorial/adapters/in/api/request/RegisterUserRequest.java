@@ -17,11 +17,11 @@ public record RegisterUserRequest(
         @NotBlank
         String username,
 
-        @Size(min = 5, max = 50)
+        @Size(min = 3, max = 50)
         @NotBlank
         String firstName,
 
-        @Size(min = 5, max = 50)
+        @Size(min = 3, max = 50)
         @NotBlank
         String lastName,
 

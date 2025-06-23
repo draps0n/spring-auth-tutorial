@@ -27,14 +27,12 @@ public class ServiceConfiguration {
     public AuthService authService(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
-            UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider
     ) {
         return new AuthServiceImpl(
                 userRepository,
                 refreshTokenRepository,
-                userProviderRepository,
                 passwordEncoder,
                 tokenProvider
         );

@@ -4,7 +4,6 @@ import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.application.exceptions.*;
 import com.drapson.springauthtutorial.application.out.RefreshTokenRepository;
 import com.drapson.springauthtutorial.application.out.TokenProvider;
-import com.drapson.springauthtutorial.application.out.UserProviderRepository;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +17,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final UserProviderRepository userProviderRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
 
@@ -28,13 +26,11 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
-            UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider
     ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
-        this.userProviderRepository = userProviderRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
     }
