@@ -7,12 +7,10 @@ import com.drapson.springauthtutorial.application.exceptions.InvalidAccessTokenE
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.UnsupportedJwtException;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,17 +18,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
-@Component
 public class JwtTokenProvider implements TokenProvider {
 
     private final SecretKey secretKey;
-    private final long accessTokenExpirationTime;
     private final UserDetailsService userDetailsService;
+    private final long accessTokenExpirationTime;
+    private final long refreshTokenExpirationTime;
 
     public JwtTokenProvider(
-            @Value("${spring.tokens.jwt.secret}") String secretKey,
-            @Value("${spring.tokens.jwt.access_expiration}") long accessTokenExpirationTime,
-            UserDetailsService userDetailsService
+            UserDetailsService userDetailsService,
+            String secretKey,
+            long accessTokenExpirationTime,
+            long refreshTokenExpirationTime
     ) {
         this.secretKey = new SecretKeySpec(
                 secretKey.getBytes(StandardCharsets.UTF_8),
@@ -38,6 +37,7 @@ public class JwtTokenProvider implements TokenProvider {
         );
         this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.userDetailsService = userDetailsService;
+        this.refreshTokenExpirationTime = refreshTokenExpirationTime;
     }
 
     @Override
@@ -92,6 +92,11 @@ public class JwtTokenProvider implements TokenProvider {
     @Override
     public String hashToken(String token) {
         return DigestUtils.sha256Hex(token);
+    }
+
+    @Override
+    public long getRefreshTokenExpirationTime() {
+        return refreshTokenExpirationTime;
     }
 
 

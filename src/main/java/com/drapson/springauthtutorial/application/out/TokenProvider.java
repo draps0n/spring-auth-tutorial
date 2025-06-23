@@ -14,4 +14,6 @@ public interface TokenProvider {
     String generateRefreshToken();
 
     String hashToken(String token);
+
+    long getRefreshTokenExpirationTime();
 }

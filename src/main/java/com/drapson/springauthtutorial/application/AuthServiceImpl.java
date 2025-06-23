@@ -6,7 +6,6 @@ import com.drapson.springauthtutorial.application.out.RefreshTokenRepository;
 import com.drapson.springauthtutorial.application.out.TokenProvider;
 import com.drapson.springauthtutorial.domain.User;
 import com.drapson.springauthtutorial.domain.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +18,6 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
-
-    @Value("${spring.tokens.other.refresh_expiration}")
-    private long refTokenExpirationTime;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -131,7 +127,7 @@ public class AuthServiceImpl implements AuthService {
                 hashedRefreshToken,
                 user,
                 LocalDateTime.now(),
-                LocalDateTime.now().plusSeconds(refTokenExpirationTime),
+                LocalDateTime.now().plusSeconds(tokenProvider.getRefreshTokenExpirationTime()),
                 false
         );
 

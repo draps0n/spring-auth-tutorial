@@ -18,8 +18,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-      hikari:
-        auto-commit: false
 
   sql:
     init:
@@ -28,15 +26,10 @@ spring:
   tokens:
     jwt:
       secret: ${JWT_SECRET_KEY}
-      access_expiration: 7200 # in seconds
-    cookie:
-      refresh-token:
-        expires-in: 604800
-      access-token:
-        expires-in: 7200
-    other:
-      refresh_expiration: 604800
-      temp_access_expiration: 600
+    refresh-token:
+      expires-in: 604800
+    access-token:
+      expires-in: 7200
 
   security:
     oauth2:
@@ -63,9 +56,6 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
-
-app:
-  front-url: http://localhost:4200
 
 server:
   port: 8080 # 8443 for https

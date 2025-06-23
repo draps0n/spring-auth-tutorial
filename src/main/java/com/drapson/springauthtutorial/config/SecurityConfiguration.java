@@ -2,8 +2,11 @@ package com.drapson.springauthtutorial.config;
 
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationEntryPoint;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationFilter;
+import com.drapson.springauthtutorial.adapters.out.jwt.JwtTokenProvider;
 import com.drapson.springauthtutorial.application.out.TokenProvider;
+import com.drapson.springauthtutorial.domain.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -52,6 +55,21 @@ public class SecurityConfiguration {
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(TokenProvider tokenProvider) {
         return new JwtAuthenticationFilter(tokenProvider);
+    }
+
+    @Bean
+    public JwtTokenProvider jwtTokenProvider(
+            UserDetailsService userDetailsService,
+            @Value("${spring.tokens.jwt.secret}") String secretKey,
+            @Value("${spring.tokens.access-token.expires-in}") long accessTokenExpirationTime,
+            @Value("${spring.tokens.refresh-token.expires-in}") long refreshTokenExpirationTime
+    ) {
+        return new JwtTokenProvider(
+                userDetailsService,
+                secretKey,
+                accessTokenExpirationTime,
+                refreshTokenExpirationTime
+        );
     }
 
     @Bean

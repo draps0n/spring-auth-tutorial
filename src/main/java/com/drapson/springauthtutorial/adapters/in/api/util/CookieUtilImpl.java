@@ -6,10 +6,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CookieUtilImpl implements CookieUtil {
-    @Value("${spring.tokens.cookie.refresh-token.expires-in}")
+    @Value("${spring.tokens.refresh-token.expires-in}")
     private long refreshTokenExpiry;
 
-    @Value("${spring.tokens.cookie.access-token.expires-in}")
+    @Value("${spring.tokens.access-token.expires-in}")
     private long accessTokenExpiry;
 
     @Value("${server.ssl.enabled}")
