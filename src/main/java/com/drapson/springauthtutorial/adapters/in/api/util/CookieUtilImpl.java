@@ -15,6 +15,7 @@ public class CookieUtilImpl implements CookieUtil {
     @Value("${server.ssl.enabled}")
     private boolean sslEnabled;
 
+    @Override
     public Cookie createRefreshTokenCookie(String token) {
         Cookie cookie = new Cookie("REFRESH-TOKEN", token);
         cookie.setHttpOnly(true);
@@ -24,6 +25,7 @@ public class CookieUtilImpl implements CookieUtil {
         return cookie;
     }
 
+    @Override
     public Cookie invalidateRefreshTokenCookie() {
         Cookie cookie = new Cookie("REFRESH-TOKEN", "");
         cookie.setPath("/");
@@ -33,6 +35,17 @@ public class CookieUtilImpl implements CookieUtil {
         return cookie;
     }
 
+    @Override
+    public Cookie invalidateAccessTokenCookie() {
+        Cookie cookie = new Cookie("ACCESS-TOKEN", "");
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        cookie.setSecure(sslEnabled);
+        return cookie;
+    }
+
+    @Override
     public Cookie createAccessTokenCookie(String token) {
         Cookie cookie = new Cookie("ACCESS-TOKEN", token);
         cookie.setHttpOnly(true);
