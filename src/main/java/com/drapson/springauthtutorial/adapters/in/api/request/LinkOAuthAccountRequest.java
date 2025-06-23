@@ -8,13 +8,15 @@ public record LinkOAuthAccountRequest(
         @NotNull
         boolean shouldLink,
 
-        @NotNull
         String provider,
 
-        @NotNull
         String providerId,
 
-        @NotNull
-        UUID userId
+        UUID userId,
+
+        String password
 ) {
+        public boolean validate() {
+                return !shouldLink || provider != null && providerId != null && userId != null && password != null;
+        }
 }

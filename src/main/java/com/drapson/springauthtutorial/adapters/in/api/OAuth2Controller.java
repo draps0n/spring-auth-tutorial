@@ -15,11 +15,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.method.MethodValidationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.InvalidParameterException;
 import java.util.Optional;
 
 @SecurityRequirements
@@ -38,11 +41,16 @@ public class OAuth2Controller {
     @PostMapping("/link")
     public ResponseEntity<Void> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
                                                   HttpServletResponse response) {
+        if (!linkOAuthAccountRequest.validate()) {
+            throw new InvalidParameterException("If shouldLink is true, provider, providerId, userId, and password must be provided.");
+        }
+
         Optional<AuthTokens> authTokens = oAuth2Service.linkNewOAuthAccount(new LinkOAuthAccountDto(
                 linkOAuthAccountRequest.shouldLink(),
                 linkOAuthAccountRequest.provider(),
                 linkOAuthAccountRequest.providerId(),
-                linkOAuthAccountRequest.userId()
+                linkOAuthAccountRequest.userId(),
+                linkOAuthAccountRequest.password()
         ));
 
         if (authTokens.isPresent()) {

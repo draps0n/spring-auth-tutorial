@@ -1,6 +1,7 @@
 package com.drapson.springauthtutorial.application;
 
 import com.drapson.springauthtutorial.application.dtos.*;
+import com.drapson.springauthtutorial.application.exceptions.InvalidCredentialsException;
 import com.drapson.springauthtutorial.application.exceptions.LinkedUserNotFoundException;
 import com.drapson.springauthtutorial.application.exceptions.UserAlreadyLinkedToProviderException;
 import com.drapson.springauthtutorial.application.out.OAuth2CodeService;
@@ -39,6 +40,10 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         if (linkOAuthAccountDto.shouldLink()) {
             User user = userRepository.getUserById(linkOAuthAccountDto.userId())
                     .orElseThrow(() -> new LinkedUserNotFoundException("Local user to link to not found"));
+
+            if (!authService.checkPassword(linkOAuthAccountDto.password(), user.getPassword())) {
+                throw new InvalidCredentialsException("Invalid password");
+            }
 
             if (userProviderRepository.checkIfUserHasProvider(user.getId(), linkOAuthAccountDto.provider())) {
                 throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
@@ -90,39 +95,41 @@ public class OAuth2ServiceImpl implements OAuth2Service {
             );
         } else {
             // User does not exist, create a new OAuth user
-            String username = googleUserDto.firstName().substring(0, 3).toLowerCase() + "_" +
-                    googleUserDto.lastName().substring(0, 3).toLowerCase() + "_" +
-                    ThreadLocalRandom.current().nextInt(1000, 9999);
-
-            User newGoogleUser = new User(
-                    UUID.randomUUID(),
-                    googleUserDto.email(),
-                    null,
-                    username,
-                    googleUserDto.firstName(),
-                    googleUserDto.lastName(),
-                    null, // No birthdate provided
-                    false, // Default to not sending budget reports
-                    false // Default to private profile
-            );
-            User createdGoogleUser = userRepository.save(newGoogleUser);
-
-            userProviderRepository.save(new UserOAuthProvider(
-                    UUID.randomUUID(),
-                    "google",
-                    googleUserDto.sub(),
-                    createdGoogleUser
-            ));
-
-            AuthTokens authTokens = authService.issueJwtTokens(createdGoogleUser);
-
-            return new GoogleLoginDTO(
-                    GoogleLoginDTO.LoginType.NEW_USER,
-                    authTokens.accessToken(),
-                    authTokens.refreshToken()
-            );
+            return registerNewOAuth2User(googleUserDto);
         }
-
     }
 
+    private GoogleLoginDTO registerNewOAuth2User(GoogleUserDto googleUserDto) {
+        String username = googleUserDto.firstName().substring(0, 3).toLowerCase() + "_" +
+                googleUserDto.lastName().substring(0, 3).toLowerCase() + "_" +
+                ThreadLocalRandom.current().nextInt(1000, 9999);
+
+        User newGoogleUser = new User(
+                UUID.randomUUID(),
+                googleUserDto.email(),
+                null,
+                username,
+                googleUserDto.firstName(),
+                googleUserDto.lastName(),
+                null, // No birthdate provided
+                false, // Default to not sending budget reports
+                false // Default to private profile
+        );
+        User createdGoogleUser = userRepository.save(newGoogleUser);
+
+        userProviderRepository.save(new UserOAuthProvider(
+                UUID.randomUUID(),
+                "google",
+                googleUserDto.sub(),
+                createdGoogleUser
+        ));
+
+        AuthTokens authTokens = authService.issueJwtTokens(createdGoogleUser);
+
+        return new GoogleLoginDTO(
+                GoogleLoginDTO.LoginType.NEW_USER,
+                authTokens.accessToken(),
+                authTokens.refreshToken()
+        );
+    }
 }

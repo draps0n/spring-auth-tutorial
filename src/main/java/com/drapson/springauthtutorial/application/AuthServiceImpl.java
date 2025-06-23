@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
                 .getUserByEmailWithPassword(loginUserDto.email())
                 .orElseThrow(() -> new InvalidCredentialsException("Login credentials are invalid"));
 
-        if (!passwordEncoder.matches(loginUserDto.password(), user.getPassword())) {
+        if (!checkPassword(loginUserDto.password(), user.getPassword())) {
             throw new InvalidCredentialsException("Login credentials are invalid");
         }
 
@@ -115,6 +115,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return generateNewAuthTokens(user);
+    }
+
+    @Override
+    public boolean checkPassword(String providedPassword, String hashedPassword) {
+        return passwordEncoder.matches(providedPassword, hashedPassword);
     }
 
     @Transactional

@@ -6,7 +6,8 @@ public record LinkOAuthAccountDto(
         boolean shouldLink,
         String provider,
         String providerId,
-        UUID userId
+        UUID userId,
+        String password
 ) {
 
 }

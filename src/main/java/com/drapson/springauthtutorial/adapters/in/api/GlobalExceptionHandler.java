@@ -8,12 +8,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.security.InvalidParameterException;
 import java.time.format.DateTimeParseException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, DateTimeParseException.class})
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class,
+            DateTimeParseException.class,
+            InvalidParameterException.class
+    })
     public ProblemDetail handleValidation(Exception ex) {
         return formatErrorResponse(ErrorCode.VALIDATION_ERROR, ex.getMessage());
     }

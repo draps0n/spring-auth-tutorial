@@ -15,4 +15,6 @@ public interface AuthService {
     AuthTokens refreshAccessToken(String refreshToken);
 
     AuthTokens issueJwtTokens(User user);
+
+    boolean checkPassword(String providedPassword, String hashedPassword);
 }
