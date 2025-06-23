@@ -1,11 +1,14 @@
 package com.drapson.springauthtutorial.application.dtos;
 
+import jakarta.validation.constraints.NotNull;
+
+import java.util.UUID;
+
 public record LinkOAuthAccountDto(
-        String linkToken,
-        boolean shouldLinkAccounts,
+        boolean shouldLink,
+        String provider,
         String providerId,
-        String providerName,
-        String email
+        UUID userId
 ) {
 
 }

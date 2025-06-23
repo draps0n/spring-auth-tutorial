@@ -3,6 +3,8 @@ package com.drapson.springauthtutorial.application;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
 
+import java.util.Optional;
+
 public interface AuthService {
     User registerUser(RegisterUserDto registerUserDto);
 
@@ -16,7 +18,7 @@ public interface AuthService {
 
     boolean checkIfUserHasProvider(User user, String provider);
 
-    AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
+    Optional<AuthTokens> linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
 
     String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
 

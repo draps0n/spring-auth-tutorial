@@ -2,21 +2,19 @@ package com.drapson.springauthtutorial.adapters.in.api.request;
 
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public record LinkOAuthAccountRequest(
         @NotNull
-        String linkToken,
+        boolean shouldLink,
 
         @NotNull
-        boolean shouldLinkAccounts,
+        String provider,
 
         @NotNull
         String providerId,
 
         @NotNull
-        String providerName,
-
-        @NotNull
-        String email
-
+        UUID userId
 ) {
 }

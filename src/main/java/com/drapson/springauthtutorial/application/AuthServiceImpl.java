@@ -156,27 +156,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
-
-        if (linkOAuthAccountDto.shouldLinkAccounts()) {
-            User user = userRepository.getUserByEmailWithPassword(linkOAuthAccountDto.email())
+    public Optional<AuthTokens> linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
+        if (linkOAuthAccountDto.shouldLink()) {
+            User user = userRepository.getUserById(linkOAuthAccountDto.userId())
                     .orElseThrow(() -> new LinkedUserNotFoundException("Local user to link to not found"));
 
-            if (userProviderRepository.checkIfUserHasProvider(user.getId(), linkOAuthAccountDto.providerName())) {
+            if (userProviderRepository.checkIfUserHasProvider(user.getId(), linkOAuthAccountDto.provider())) {
                 throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
             }
 
             userProviderRepository.save(new UserOAuthProvider(
                     UUID.randomUUID(),
-                    linkOAuthAccountDto.providerName(),
+                    linkOAuthAccountDto.provider(),
                     linkOAuthAccountDto.providerId(),
                     user
             ));
 
-            return generateNewAuthTokens(user);
+            return Optional.of(generateNewAuthTokens(user));
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @Override

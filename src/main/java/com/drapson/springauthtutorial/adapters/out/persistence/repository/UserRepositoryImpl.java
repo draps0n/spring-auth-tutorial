@@ -52,4 +52,9 @@ public class UserRepositoryImpl implements UserRepository {
         return jpaUserRepository.findByEmail(email).map(UserMapper::toDomain);
     }
 
+    @Override
+    public Optional<User> getUserById(UUID id) {
+        return jpaUserRepository.findById(id).map(UserMapper::toDomain);
+    }
+
 }

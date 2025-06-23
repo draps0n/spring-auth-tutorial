@@ -12,7 +12,7 @@ public interface JpaUserProviderRepository extends JpaRepository<UserOAuthProvid
     boolean existsByUserIdAndProvider(UUID userId, String provider);
 
     @Query("""
-                    SELECT u
+                    SELECT up
                     FROM UserOAuthProviderEntity up
                     JOIN FETCH up.user u
                     WHERE up.provider = :providerName

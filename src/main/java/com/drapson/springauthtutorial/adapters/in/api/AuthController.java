@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @SecurityRequirements
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -96,27 +98,28 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/link-oauth")
+    @PostMapping("/oauth2/link")
     public ResponseEntity<Void> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
                                                   HttpServletResponse response) {
-        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
-                linkOAuthAccountRequest.linkToken(),
-                linkOAuthAccountRequest.shouldLinkAccounts(),
+        Optional<AuthTokens> authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
+                linkOAuthAccountRequest.shouldLink(),
+                linkOAuthAccountRequest.provider(),
                 linkOAuthAccountRequest.providerId(),
-                linkOAuthAccountRequest.providerName(),
-                linkOAuthAccountRequest.email()
-
+                linkOAuthAccountRequest.userId()
         ));
 
-        if (authTokens != null) {
-            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
+        if (authTokens.isPresent()) {
+            AuthTokens createdTokens = authTokens.get();
+
+            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(createdTokens.refreshToken());
+            Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(createdTokens.accessToken());
 
             response.addCookie(refreshTokenCookie);
             response.addCookie(accessTokenCookie);
 
             return ResponseEntity.ok().build();
         }
+
         return ResponseEntity.noContent().build();
     }
 
