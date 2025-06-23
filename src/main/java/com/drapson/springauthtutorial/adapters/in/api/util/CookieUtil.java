@@ -4,5 +4,8 @@ import jakarta.servlet.http.Cookie;
 
 public interface CookieUtil {
     Cookie createRefreshTokenCookie(String token);
-    Cookie invalidateCookie();
+
+    Cookie createAccessTokenCookie(String token);
+
+    Cookie invalidateRefreshTokenCookie();
 }
