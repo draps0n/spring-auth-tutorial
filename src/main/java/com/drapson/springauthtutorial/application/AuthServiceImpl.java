@@ -10,10 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class AuthServiceImpl implements AuthService {
 
@@ -23,7 +20,6 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
     private final TempUserDataPort tempUserDataPort;
-    private final OAuth2CodeService oAuth2CodeService;
 
     @Value("${spring.tokens.other.temp_access_expiration}")
     private long tempTokenExpirationTime;
@@ -36,8 +32,7 @@ public class AuthServiceImpl implements AuthService {
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort,
-            OAuth2CodeService oAuth2CodeService
+            TempUserDataPort tempUserDataPort
     ) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -45,7 +40,6 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.tempUserDataPort = tempUserDataPort;
-        this.oAuth2CodeService = oAuth2CodeService;
     }
 
     @Override
@@ -155,96 +149,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
-    public Optional<AuthTokens> linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto) {
-        if (linkOAuthAccountDto.shouldLink()) {
-            User user = userRepository.getUserById(linkOAuthAccountDto.userId())
-                    .orElseThrow(() -> new LinkedUserNotFoundException("Local user to link to not found"));
-
-            if (userProviderRepository.checkIfUserHasProvider(user.getId(), linkOAuthAccountDto.provider())) {
-                throw new UserAlreadyLinkedToProviderException("User is already linked to this provider");
-            }
-
-            userProviderRepository.save(new UserOAuthProvider(
-                    UUID.randomUUID(),
-                    linkOAuthAccountDto.provider(),
-                    linkOAuthAccountDto.providerId(),
-                    user
-            ));
-
-            return Optional.of(generateNewAuthTokens(user));
-        }
-
-        return Optional.empty();
-    }
-
-    @Override
     public String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration) {
         String tempRegistrationToken = UUID.randomUUID().toString();
         tempUserDataPort.save(tempRegistrationToken, pendingOAuthRegistration, Duration.ofSeconds(tempTokenExpirationTime));
 
         return tempRegistrationToken;
-    }
-
-    @Override
-    @Transactional
-    public GoogleLoginDTO handleGoogleLogin(OAuthCodeDto oAuthCodeDto) {
-        Map<String, String> tokenResponse = oAuth2CodeService.exchangeCodeForTokens(oAuthCodeDto.code(), oAuthCodeDto.codeVerifier());
-        GoogleUserDto googleUserDto = oAuth2CodeService.extractUserInfoFromIdToken(tokenResponse.get("id_token"));
-
-        Optional<UserOAuthProvider> existingOAuthUser = userProviderRepository
-                .getOAuthUserByProviderAndProviderId("google", googleUserDto.sub());
-
-        if (existingOAuthUser.isPresent()) {
-            // User already exists with this Google provider ID
-            User user = existingOAuthUser.get().user();
-            AuthTokens authTokens = issueJwtTokens(user);
-            return new GoogleLoginDTO(
-                    GoogleLoginDTO.LoginType.EXISTING_USER,
-                    authTokens.accessToken(),
-                    authTokens.refreshToken()
-            );
-        }
-
-        Optional<User> user = userRepository.getUserByEmail(googleUserDto.email());
-
-        if (user.isPresent()) {
-            // User exists, but not linked to Google
-            User existingUser = user.get();
-            return new GoogleLoginDTO(
-                    GoogleLoginDTO.LoginType.POSSIBLE_LINK,
-                    "google",
-                    googleUserDto.sub(),
-                    existingUser.getId()
-            );
-        } else {
-            // User does not exist, create a new OAuth user
-            String username = googleUserDto.firstName().substring(0, 3).toLowerCase() + "_" +
-                    googleUserDto.lastName().substring(0, 3).toLowerCase() + "_" +
-                    ThreadLocalRandom.current().nextInt(1000, 9999);
-
-            User newGoogleUser = new User(
-                    UUID.randomUUID(),
-                    googleUserDto.email(),
-                    null,
-                    username,
-                    googleUserDto.firstName(),
-                    googleUserDto.lastName(),
-                    null, // No birthdate provided
-                    false, // Default to not sending budget reports
-                    false // Default to private profile
-            );
-            User createdGoogleUser = userRepository.save(newGoogleUser);
-
-            AuthTokens authTokens = issueJwtTokens(createdGoogleUser);
-
-            return new GoogleLoginDTO(
-                    GoogleLoginDTO.LoginType.NEW_USER,
-                    authTokens.accessToken(),
-                    authTokens.refreshToken()
-            );
-        }
-
     }
 
     @Transactional

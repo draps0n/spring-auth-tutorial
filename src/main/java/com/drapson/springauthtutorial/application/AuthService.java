@@ -18,9 +18,5 @@ public interface AuthService {
 
     boolean checkIfUserHasProvider(User user, String provider);
 
-    Optional<AuthTokens> linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
-
     String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
-
-    GoogleLoginDTO handleGoogleLogin(OAuthCodeDto oAuthCodeDto);
 }

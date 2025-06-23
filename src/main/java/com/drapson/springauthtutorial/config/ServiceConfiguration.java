@@ -25,8 +25,7 @@ public class ServiceConfiguration {
             UserProviderRepository userProviderRepository,
             BCryptPasswordEncoder passwordEncoder,
             TokenProvider tokenProvider,
-            TempUserDataPort tempUserDataPort,
-            OAuth2CodeService oAuth2CodeService
+            TempUserDataPort tempUserDataPort
     ) {
         return new AuthServiceImpl(
                 userRepository,
@@ -34,8 +33,22 @@ public class ServiceConfiguration {
                 userProviderRepository,
                 passwordEncoder,
                 tokenProvider,
-                tempUserDataPort,
-                oAuth2CodeService
+                tempUserDataPort
+        );
+    }
+
+    @Bean
+    public OAuth2Service oAuth2Service(
+            UserRepository userRepository,
+            UserProviderRepository userProviderRepository,
+            OAuth2CodeService oAuth2CodeService,
+            AuthService authService
+    ) {
+        return new OAuth2ServiceImpl(
+                userRepository,
+                userProviderRepository,
+                oAuth2CodeService,
+                authService
         );
     }
 
