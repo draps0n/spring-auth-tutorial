@@ -59,14 +59,8 @@ public class JwtTokenProvider implements TokenProvider {
                     .build()
                     .parseSignedClaims(token);
             return true;
-        } catch (io.jsonwebtoken.security.SecurityException | io.jsonwebtoken.MalformedJwtException e) {
-            throw new InvalidAccessTokenException("Invalid token");
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            throw new AccessTokenExpiredException("Token has expired");
-        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
-            throw new UnsupportedJwtException("Provided token format is not supported");
-        } catch (IllegalArgumentException e) {
-            throw new EmptyAccessTokenException("Access token is empty");
+        } catch (Exception e) {
+            return false;
         }
     }
 

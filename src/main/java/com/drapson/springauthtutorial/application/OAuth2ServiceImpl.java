@@ -74,6 +74,12 @@ public class OAuth2ServiceImpl implements OAuth2Service {
         if (existingOAuthUser.isPresent()) {
             // User already exists with this Google provider ID
             User user = existingOAuthUser.get().user();
+
+            if (!user.getEmail().equals(googleUserDto.email())) {
+                user.setEmail(googleUserDto.email());
+                userRepository.save(user);
+            }
+
             AuthTokens authTokens = authService.issueJwtTokens(user);
             return new GoogleLoginDTO(
                     GoogleLoginDTO.LoginType.EXISTING_USER,
