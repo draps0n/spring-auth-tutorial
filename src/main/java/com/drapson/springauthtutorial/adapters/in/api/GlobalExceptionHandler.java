@@ -10,17 +10,32 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.nio.file.AccessDeniedException;
 import java.security.InvalidParameterException;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage() == null ? "Validation error" : error.getDefaultMessage())
+                .collect(Collectors.toList());
+        ProblemDetail problem = formatErrorResponse(ErrorCode.VALIDATION_ERROR, "Validation failed");
+        problem.setProperty("errors", errors);
+        return problem;
+    }
+
     @ExceptionHandler({
-            MethodArgumentNotValidException.class,
             DateTimeParseException.class,
             InvalidParameterException.class
     })
     public ProblemDetail handleValidation(Exception ex) {
-        return formatErrorResponse(ErrorCode.VALIDATION_ERROR, ex.getMessage());
+        ProblemDetail problem = formatErrorResponse(ErrorCode.VALIDATION_ERROR, "Validation failed");
+        problem.setProperty("errors", List.of(ex.getMessage()));
+        return problem;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
