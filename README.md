@@ -30,4 +30,4 @@ Jest to prototypowy moduł finalnej aplikacji, który umożliwia:
 
 #### Opcjonalnie
 5. Zbuduj aplikację za pomocą Gradle: `./gradlew build`.
-6. Uruchom aplikację: `java -jar build/libs/spring-auth-tutorial-0.0.1-SNAPSHOT.jar`.
+6. Uruchom aplikację (należy podmień wartości zmiennych środowiskowych): `DB_URL=jdbc:postgresql://localhost:5432/db_name DB_USERNAME=your_db_username DB_PASSWORD=very_strong_password JWT_SECRET_KEY=your_jwt_super_secret_key_that_is_long_enough GOOGLE_CLIENT_ID=your_google_client_id GOOGLE_CLIENT_SECRET=your_google_client_secret java -jar ./build/libs/spring-auth-tutorial-0.0.1-SNAPSHOT.jar`.
