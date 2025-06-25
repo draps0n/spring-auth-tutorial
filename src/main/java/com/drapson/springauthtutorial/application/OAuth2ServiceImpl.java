@@ -75,7 +75,8 @@ public class OAuth2ServiceImpl implements OAuth2Service {
             // User already exists with this Google provider ID
             User user = existingOAuthUser.get().user();
 
-            if (!user.getEmail().equals(googleUserDto.email())) {
+            // Update email only if the user has no local account set up and the email is different
+            if (user.getPassword() == null && !user.getEmail().equals(googleUserDto.email())) {
                 user.setEmail(googleUserDto.email());
                 userRepository.save(user);
             }
