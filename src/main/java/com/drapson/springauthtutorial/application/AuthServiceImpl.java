@@ -9,6 +9,7 @@ import com.drapson.springauthtutorial.domain.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.InvalidParameterException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -38,10 +39,14 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistsException("This email address is already taken");
         }
 
+        if (!validatePassword(registerUserDto.password())) {
+            throw new InvalidParameterException("Password must be at least 8 characters long, contain at least one letter, one digit, and one special character.");
+        }
+
         User user = new User(
                 UUID.randomUUID(),
                 registerUserDto.email(),
-                registerUserDto.password() == null ? null : passwordEncoder.encode(registerUserDto.password()),
+                passwordEncoder.encode(registerUserDto.password()),
                 registerUserDto.username(),
                 registerUserDto.firstName(),
                 registerUserDto.lastName(),
@@ -139,6 +144,18 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(refreshToken);
 
         return new AuthTokens(accessToken, rawRefreshToken);
+    }
+
+    private boolean validatePassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+
+        boolean hasSpecial = password.matches(".*[!@#$%^&*()_+\\-={}:;\"'\\[\\]|<>,.?/~`].*");
+        boolean hasLetter = password.matches(".*[A-Za-z].*");
+        boolean hasDigit = password.matches(".*\\d.*");
+
+        return hasSpecial && hasLetter && hasDigit;
     }
 
     private String generateAccessToken(User user) {
