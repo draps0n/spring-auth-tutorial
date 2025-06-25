@@ -20,8 +20,14 @@ def loadEnv() {
     return envMap
 }
 
-test {
-    environment(loadEnv())
+def envVars = loadEnv()
+gradle.projectsEvaluated {
+    tasks.withType(JavaExec).configureEach { task ->
+        environment envVars
+    }
+    tasks.withType(Test).configureEach { task ->
+        environment envVars
+    }
 }
 
 
