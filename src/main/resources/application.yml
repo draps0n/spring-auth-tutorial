@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-auth-tutorial
   profiles:
-    default: 
+    default:
 
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -18,10 +18,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-
-  sql:
-    init:
-      mode: always
 
   tokens:
     jwt:
@@ -42,7 +38,6 @@ spring:
               - openid
               - profile
               - email
-              - https://www.googleapis.com/auth/user.birthday.read
 
 logging:
   level:
