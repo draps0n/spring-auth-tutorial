@@ -1,25 +1,19 @@
 package com.drapson.springauthtutorial.config;
 
-import com.drapson.springauthtutorial.adapters.in.security.CustomOAuth2SuccessHandler;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationEntryPoint;
 import com.drapson.springauthtutorial.adapters.in.security.JwtAuthenticationFilter;
-import com.drapson.springauthtutorial.adapters.in.security.UserDetailsServiceImpl;
-import com.drapson.springauthtutorial.adapters.out.redis.RedisTempUserDataAdapter;
-import com.drapson.springauthtutorial.application.AuthService;
-import com.drapson.springauthtutorial.application.TempUserDataPort;
-import com.drapson.springauthtutorial.application.TokenProvider;
-import com.drapson.springauthtutorial.application.UserService;
+import com.drapson.springauthtutorial.adapters.out.jwt.JwtTokenProvider;
+import com.drapson.springauthtutorial.application.out.TokenProvider;
 import com.drapson.springauthtutorial.domain.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -31,6 +25,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
@@ -38,12 +33,13 @@ import java.util.List;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, CustomOAuth2SuccessHandler customOAuth2SuccessHandler, AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/oauth2/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**"
@@ -52,20 +48,9 @@ public class SecurityConfiguration {
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-//                .httpBasic(Customizer.withDefaults())
-                .oauth2Login(oauth2 -> oauth2.successHandler(customOAuth2SuccessHandler))
+                .cors(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .build();
-    }
-
-    @Bean
-    public TempUserDataPort tempUserDataPort(RedisTemplate<String, Object> redisTemplate) {
-        return new RedisTempUserDataAdapter(redisTemplate);
-    }
-
-    @Bean
-    public CustomOAuth2SuccessHandler customOAuth2SuccessHandler(UserService userService, AuthService authService, @Value("${app.front-url}") String frontUrl) {
-        return new CustomOAuth2SuccessHandler(userService, authService, frontUrl);
     }
 
     @Bean
@@ -74,16 +59,26 @@ public class SecurityConfiguration {
     }
 
     @Bean
+    public JwtTokenProvider jwtTokenProvider(
+            UserDetailsService userDetailsService,
+            @Value("${spring.tokens.jwt.secret}") String secretKey,
+            @Value("${spring.tokens.access-token.expires-in}") long accessTokenExpirationTime,
+            @Value("${spring.tokens.refresh-token.expires-in}") long refreshTokenExpirationTime
+    ) {
+        return new JwtTokenProvider(
+                userDetailsService,
+                secretKey,
+                accessTokenExpirationTime,
+                refreshTokenExpirationTime
+        );
+    }
+
+    @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, BCryptPasswordEncoder bCryptPasswordEncoder) {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
         daoAuthenticationProvider.setPasswordEncoder(bCryptPasswordEncoder);
         daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         return daoAuthenticationProvider;
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return new UserDetailsServiceImpl(userRepository);
     }
 
     @Bean
@@ -97,16 +92,9 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        return template;
-    }
-
-    @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5432"));
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Cookie"));
         configuration.setAllowCredentials(true);
@@ -121,4 +109,8 @@ public class SecurityConfiguration {
         return new JwtAuthenticationEntryPoint(objectMapper);
     }
 
+    @Bean
+    public WebClient webClient(WebClient.Builder builder) {
+        return builder.build();
+    }
 }

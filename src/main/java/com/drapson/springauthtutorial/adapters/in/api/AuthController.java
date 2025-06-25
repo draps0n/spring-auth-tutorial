@@ -2,6 +2,7 @@ package com.drapson.springauthtutorial.adapters.in.api;
 
 import com.drapson.springauthtutorial.adapters.in.api.request.*;
 import com.drapson.springauthtutorial.adapters.in.api.response.AccessTokenResponse;
+import com.drapson.springauthtutorial.adapters.in.api.response.OAuth2LinkResponse;
 import com.drapson.springauthtutorial.adapters.in.api.util.CookieUtil;
 import com.drapson.springauthtutorial.application.AuthService;
 import com.drapson.springauthtutorial.application.dtos.*;
@@ -11,8 +12,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @SecurityRequirements
 @RestController
@@ -28,8 +32,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AccessTokenResponse> registerUser(@RequestBody @Valid RegisterUserRequest request,
-                                                            HttpServletResponse response) {
+    public ResponseEntity<Void> registerUser(@RequestBody @Valid RegisterUserRequest request,
+                                             HttpServletResponse response) {
         User user = authService.registerUser(
                 new RegisterUserDto(
                         request.email(),
@@ -45,9 +49,12 @@ public class AuthController {
         AuthTokens authTokens = authService.issueJwtTokens(user);
 
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-        response.addCookie(refreshTokenCookie);
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
 
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
+        response.addCookie(refreshTokenCookie);
+        response.addCookie(accessTokenCookie);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
@@ -59,76 +66,35 @@ public class AuthController {
                         request.password()
                 )
         );
+
         Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
+
         response.addCookie(refreshTokenCookie);
+        response.addCookie(accessTokenCookie);
 
         return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response){
+    public ResponseEntity<Void> logout(@CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response) {
         authService.logoutUser(refreshToken);
-        response.addCookie(cookieUtil.invalidateCookie());
+
+        response.addCookie(cookieUtil.invalidateAccessTokenCookie());
+        response.addCookie(cookieUtil.invalidateRefreshTokenCookie());
 
         return ResponseEntity.ok().build();
     }
 
     @SecurityRequirement(name = "refreshToken")
     @PostMapping("/refresh")
-    public ResponseEntity<AccessTokenResponse> refreshTokens(
-            @CookieValue(name = "REFRESH-TOKEN") String refreshToken) {
-        AuthTokens authTokens = authService.refreshTokens(refreshToken);
+    public ResponseEntity<Void> refreshTokens(
+            @CookieValue(name = "REFRESH-TOKEN") String refreshToken, HttpServletResponse response) {
+        AuthTokens authTokens = authService.refreshAccessToken(refreshToken);
 
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-    }
+        Cookie accessTokenCookie = cookieUtil.createAccessTokenCookie(authTokens.accessToken());
+        response.addCookie(accessTokenCookie);
 
-    @PostMapping("/finish-oauth-registration")
-    public ResponseEntity<AccessTokenResponse> finishOAuthRegistration(@RequestBody @Valid AdditionalRegistrationInfoRequest additionalRegistrationInfoRequest,
-                                                                       HttpServletResponse response) {
-        AuthTokens authTokens = authService.finishOAuthRegistration(new FinishOAuthRegistrationDto(
-                additionalRegistrationInfoRequest.token(),
-                additionalRegistrationInfoRequest.username(),
-                additionalRegistrationInfoRequest.birthDate(),
-                additionalRegistrationInfoRequest.sendBudgetReports(),
-                additionalRegistrationInfoRequest.isProfilePublic()
-        ));
-
-        Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-        response.addCookie(refreshTokenCookie);
-
-        return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-    }
-
-    @PostMapping("/link-oauth")
-    public ResponseEntity<AccessTokenResponse> linkOAuthAccounts(@RequestBody @Valid LinkOAuthAccountRequest linkOAuthAccountRequest,
-                                                                 HttpServletResponse response) {
-        AuthTokens authTokens = authService.linkNewOAuthAccount(new LinkOAuthAccountDto(
-                linkOAuthAccountRequest.linkToken(),
-                linkOAuthAccountRequest.shouldLinkAccounts()
-        ));
-
-        if (authTokens != null) {
-            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            response.addCookie(refreshTokenCookie);
-
-            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-        }
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/link-local")
-    public ResponseEntity<AccessTokenResponse> linkLocalAccount(@RequestBody @Valid LinkLocalAccountRequest linkLocalAccountRequest,
-                                                                HttpServletResponse response) {
-        AuthTokens authTokens = authService.linkNewLocalAccount(new LinkLocalAccountDto(
-                linkLocalAccountRequest.linkToken(),
-                linkLocalAccountRequest.shouldLinkAccounts()
-        ));
-        if (authTokens != null) {
-            Cookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(authTokens.refreshToken());
-            response.addCookie(refreshTokenCookie);
-
-            return ResponseEntity.ok(new AccessTokenResponse(authTokens.accessToken()));
-        }
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,7 +1,5 @@
 package com.drapson.springauthtutorial.adapters.in.api;
 
-import com.drapson.springauthtutorial.adapters.in.security.AdditionalRegistrationInfoNeededException;
-import com.drapson.springauthtutorial.adapters.in.security.EmailLinkedToAnotherAccountWithDifferentProviderException;
 import com.drapson.springauthtutorial.application.exceptions.*;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,14 +8,34 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.security.InvalidParameterException;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, DateTimeParseException.class})
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage() == null ? "Validation error" : error.getDefaultMessage())
+                .collect(Collectors.toList());
+        ProblemDetail problem = formatErrorResponse(ErrorCode.VALIDATION_ERROR, "Validation failed");
+        problem.setProperty("errors", errors);
+        return problem;
+    }
+
+    @ExceptionHandler({
+            DateTimeParseException.class,
+            InvalidParameterException.class
+    })
     public ProblemDetail handleValidation(Exception ex) {
-        return formatErrorResponse(ErrorCode.VALIDATION_ERROR, ex.getMessage());
+        ProblemDetail problem = formatErrorResponse(ErrorCode.VALIDATION_ERROR, "Validation failed");
+        problem.setProperty("errors", List.of(ex.getMessage()));
+        return problem;
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -29,20 +47,6 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleEmailLinked(EmailLinkedThroughProviderException ex) {
         ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_PROVIDER, ex.getMessage());
         problem.setProperty("linkToken", ex.getLinkToken());
-        return problem;
-    }
-
-    @ExceptionHandler(EmailLinkedToAnotherAccountWithDifferentProviderException.class)
-    public ProblemDetail handleEmailLinkedLocal(EmailLinkedToAnotherAccountWithDifferentProviderException ex) {
-        ProblemDetail problem = formatErrorResponse(ErrorCode.EMAIL_LINKED_THROUGH_LOCAL, ex.getMessage());
-        problem.setProperty("linkToken", ex.getLinkToken());
-        return problem;
-    }
-
-    @ExceptionHandler(AdditionalRegistrationInfoNeededException.class)
-    public ProblemDetail handleAdditionalRegistrationInfoNeeded(AdditionalRegistrationInfoNeededException ex) {
-        ProblemDetail problem = formatErrorResponse(ErrorCode.ADDITIONAL_REGISTRATION_REQUIRED, ex.getMessage());
-        problem.setProperty("registrationToken", ex.getRegistrationToken());
         return problem;
     }
 

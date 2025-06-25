@@ -2,12 +2,12 @@ spring:
   application:
     name: spring-auth-tutorial
   profiles:
-    default: 
+    default:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/auth_tutorial
-    username: postgres
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
   jpa:
@@ -18,20 +18,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-      hikari:
-        auto-commit: false
-
-  sql:
-    init:
-      mode: always
 
   tokens:
     jwt:
       secret: ${JWT_SECRET_KEY}
-      access_expiration: 7200 # in seconds
-    other:
-      refresh_expiration: 604800
-      temp_access_expiration: 600
+    refresh-token:
+      expires-in: 604800
+    access-token:
+      expires-in: 7200
 
   security:
     oauth2:
@@ -58,8 +52,11 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
-app:
-  front-url: http://localhost:5342
-
 server:
-  port: 8080
+  port: 8080 # 8443 for https
+  ssl:
+    enabled: false # if true, then uncomment section below -> +bash command to generate keystore.p12
+#    key-store: classpath:keystore.p12
+#    key-store-password: password123
+#    key-store-type: PKCS12
+#    key-alias: springboot

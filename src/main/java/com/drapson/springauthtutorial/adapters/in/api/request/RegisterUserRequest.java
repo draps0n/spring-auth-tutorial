@@ -5,34 +5,34 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 public record RegisterUserRequest(
-        @Email
-        @NotBlank
+        @Email(message = "Email should be valid")
+        @NotBlank(message = "Email is required")
         String email,
 
-        @Size(min = 8, max = 128)
-        @NotBlank
+        @Size(min = 8, max = 128, message = "Password must be between 8 and 128 characters")
+        @NotBlank(message = "Password is required")
         String password,
 
-        @Size(min = 3, max = 20)
-        @NotBlank
+        @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
+        @NotBlank(message = "Username is required")
         String username,
 
-        @Size(min = 5, max = 50)
-        @NotBlank
+        @Size(min = 3, max = 50, message = "First name must be between 3 and 50 characters")
+        @NotBlank(message = "First name is required")
         String firstName,
 
-        @Size(min = 5, max = 50)
-        @NotBlank
+        @Size(min = 3, max = 50, message = "Last name must be between 3 and 50 characters")
+        @NotBlank(message = "Last name is required")
         String lastName,
 
-        @NotNull
-        @Past
+        @NotNull(message = "Birth date is required")
+        @Past(message = "Birth date must be in the past")
         LocalDate birthDate,
 
-        @NotNull
+        @NotNull(message = "Send budget reports preference is required")
         boolean sendBudgetReports,
 
-        @NotNull
+        @NotNull(message = "Is profile public preference is required")
         boolean isProfilePublic
 ) {
 }

@@ -3,6 +3,8 @@ package com.drapson.springauthtutorial.application;
 import com.drapson.springauthtutorial.application.dtos.*;
 import com.drapson.springauthtutorial.domain.User;
 
+import java.util.Optional;
+
 public interface AuthService {
     User registerUser(RegisterUserDto registerUserDto);
 
@@ -10,17 +12,9 @@ public interface AuthService {
 
     void logoutUser(String token);
 
-    AuthTokens refreshTokens(String refreshToken);
+    AuthTokens refreshAccessToken(String refreshToken);
 
     AuthTokens issueJwtTokens(User user);
 
-    boolean checkIfUserHasProvider(User user, String provider);
-
-    AuthTokens finishOAuthRegistration(FinishOAuthRegistrationDto finishOAuthRegistrationDto);
-
-    AuthTokens linkNewOAuthAccount(LinkOAuthAccountDto linkOAuthAccountDto);
-
-    AuthTokens linkNewLocalAccount(LinkLocalAccountDto linkLocalAccountDto);
-
-    String issueTemporaryRegistrationToken(PendingOAuthRegistration pendingOAuthRegistration);
+    boolean checkPassword(String providedPassword, String hashedPassword);
 }

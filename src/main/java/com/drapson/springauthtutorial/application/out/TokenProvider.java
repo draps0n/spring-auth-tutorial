@@ -1,4 +1,4 @@
-package com.drapson.springauthtutorial.application;
+package com.drapson.springauthtutorial.application.out;
 
 import org.springframework.security.core.Authentication;
 
@@ -14,4 +14,6 @@ public interface TokenProvider {
     String generateRefreshToken();
 
     String hashToken(String token);
+
+    long getRefreshTokenExpirationTime();
 }
